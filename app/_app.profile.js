@@ -17,16 +17,15 @@ profile = {
   internStrings: true,
   mini: true,
 
-  localeList: "en-us,pt-br",
-  //,ar,cs,da,de,en,el,es,et,fi,fr,he,it,ja,ko,lt,lv,nb,nl,pl,pt-br,pt-pt,ro,ru,sv,th,tr,zh-cn,vi",
+  localeList:
+    "en-us,pt-br,ar,cs,da,de,en,el,es,et,fi,fr,he,it,ja,ko,lt,lv,nb,nl,pl,pt-br,pt-pt,ro,ru,sv,th,tr,zh-cn,vi",
 
   selectorEngine: "acme",
   stripConsole: "none",
 
   map: {
     "*": {
-      "dojox/dgauges": "dgauges",
-      pmm: "widgets/pmm"
+      "dojox/dgauges": "dgauges"
     }
   },
 
@@ -70,7 +69,15 @@ profile = {
     {
       name: "moment",
       location: "./moment",
-      main: "moment"
+      main: "moment",
+      resourceTags: {
+        miniExclude: function(filename, mid) {
+          if (mid.indexOf("/min/") > -1 || mid.indexOf("/src/") > -1) {
+            return true;
+          }
+          return false;
+        }
+      }
     },
     {
       name: "esri",
@@ -82,7 +89,19 @@ profile = {
     },
     {
       name: "widgets",
-      location: "./widgets"
+      location: "./widgets",
+      trees: [
+        // don"t bother with .hidden, tests
+        [".", ".", /(\/\.)|(~$)|(tests)/]
+      ],
+      resourceTags: {
+        copyOnly: function(filename, mid) {
+          return /LandView/.test(mid);
+        },
+        amd: function(filename, mid) {
+          return !/LandView/.test(mid) && /\.js$/.test(filename);
+        }
+      }
     },
     {
       name: "themes",
@@ -95,10 +114,6 @@ profile = {
     {
       name: "dynamic-modules",
       location: "./dynamic-modules"
-    },
-    {
-      name: "pmm",
-      location: "./widgets/pmm"
     }
   ],
 

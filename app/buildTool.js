@@ -3,7 +3,7 @@ const path = require("path");
 const utilscripts = require("./utilscripts");
 const dodelete = require("./utilscripts").dodelete;
 const docopy = require("./utilscripts").docopy;
-const prepareScript = require("./prebuild");
+const preparebuild = require("./prebuild");
 const execSync = require("child_process").execSync;
 const AdmZip = require("adm-zip");
 const babylon = require("babylon");
@@ -16,10 +16,7 @@ const filesAndDirectories = [
   "libs",
   "dynamic-modules",
   "config.json",
-  "widgets",
-  "META-INF",
-  "WEB-INF",
-  "index2.html"
+  "widgets"
 ];
 
 exports.build = function(buildPath) {
@@ -30,8 +27,8 @@ exports.build = function(buildPath) {
   copyFromAppRootToBuildSrc(filesAndDirectories);
   installDependenciesInBuildSrc(getBowerDependencies());
   createOrCleanDirectory(paths.buildOutput);
-  generateAppProfileFile();
-  generateAppConfigFile();
+  preparebuild.generateAppProfileFile();
+  preparebuild.generateAppConfigFile();
   defineDojoConfig();
   runDojoBuild();
   utilscripts.cleanUncompressedSource(paths.appPackages);
@@ -44,15 +41,6 @@ exports.build = function(buildPath) {
   return promise;
 };
 
-function generateAppProfileFile() {
-  prepareScript.prepare();
-  console.log("Current location: " + paths.appRoot);
-}
-
-function generateAppConfigFile() {
-  //currently done inside generateAppProfileFile
-}
-
 function createOrCleanDirectory(pathToDirectory) {
   dodelete(pathToDirectory);
   fs.mkdirSync(pathToDirectory);
@@ -60,7 +48,7 @@ function createOrCleanDirectory(pathToDirectory) {
 
 function copyFromAppRootToBuildSrc(filesAndDirectories) {
   console.log(`Copying many files from ${paths.appRoot}`);
-  console.log(filesAndDirectories);
+  console.log(filesAndDirectories.join("\n"));
   filesAndDirectories.forEach(function(name) {
     const from = path.join(paths.appRoot, name);
     const to = path.join(paths.buildSrc, name);

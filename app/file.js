@@ -14,5 +14,8 @@ module.exports = {
   },
   readJson: function(pathToJsonFile) {
     return fs.readJsonSync(pathToJsonFile, encoding);
+  },
+  exists: function(pathToFile) {
+    return fs.existsSync(pathToFile);
   }
 };

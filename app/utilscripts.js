@@ -5,25 +5,19 @@ var fse = require("fs-extra");
 const file = require("./file");
 
 exports.writeWidgetResourceModule = writeWidgetResourceModule;
-exports.writeWidgetSettingResourceModule = writeWidgetSettingResourceModule;
 exports.writeThemeResourceModule = writeThemeResourceModule;
 exports.visitElement = visitElement;
 exports.addI18NFeatureActionsLabel = addI18NFeatureActionsLabel;
 exports.addI18NLabel = addI18NLabel;
 exports.getAmdFolderFromUri = getAmdFolderFromUri;
 exports.copyPartAppSrc = copyPartAppSrc;
-exports.copyFullAppSrc = copyFullAppSrc;
 exports.copyAppBuildPackages = copyAppBuildPackages;
 exports.docopy = docopy;
 exports.dodelete = dodelete;
 exports.findDuplicatedModules = findDuplicatedModules;
 exports.cleanApp = cleanApp;
-exports.removeNlsSource = removeNlsSource;
 exports.cleanFilesInAppSource = cleanFilesInAppSource;
-exports.visitFolderFiles = visitFolderFiles;
-exports.cleanBuildeGeneratedFiles = cleanBuildeGeneratedFiles;
 exports.cleanUncompressedSource = cleanUncompressedSource;
-exports.visitSubFolders = visitSubFolders;
 
 //basePath: the widgets folder's parent folder
 //widget: same format with app config

@@ -1,13 +1,10 @@
-const fs = require("fs");
 const path = require("path");
-const fse = require("fs-extra");
 const vm = require("vm");
 const utilscripts = require("./utilscripts");
 const paths = require("./paths");
 const file = require("./file");
+const serialize = require("serialize-javascript");
 
-/*global basePath */
-var basePath = paths.buildSrc;
 var appConfig;
 var profile;
 
@@ -53,21 +50,26 @@ function loadProfileFile() {
   var profileStr = file.read(paths._appProfileJs);
   profile = vm.runInThisContext(profileStr);
 }
+
 function loadAppConfigFile() {
   appConfig = file.readJson(paths.appConfigFile);
   appConfig._buildInfo = {};
 }
 
-exports.prepare = function() {
+exports.generateAppProfileFile = function() {
   loadProfileFile();
   loadAppConfigFile();
   addBuildLayersToProfile();
   addBuildFilesToProfile();
-  utilscripts.writeThemeResourceModule(basePath, appConfig);
+  utilscripts.writeThemeResourceModule(paths.buildSrc, appConfig);
   writeAllWidgetResourceModules();
   mergeAndWriteWidgetManifests();
   writeProfile();
   writeAppConfig();
+};
+
+exports.generateAppConfigFile = function() {
+  //currently done in generateAppProfileFile()
 };
 
 function writeAppConfig() {
@@ -83,9 +85,16 @@ function writeAppConfig() {
 }
 
 function writeProfile() {
-  var profileStr = "profile = " + JSON.stringify(profile, null, 2) + ";";
+  let profileStr = "profile = " + serializeWithFunctions(profile) + ";";
   let toPath = paths.generatedAppProfileJs;
   file.write(profileStr, toPath);
+}
+
+/**
+ * Use serializeWithFunctions() to enable usage of functions with resourceTags in _app.profile.js.
+ */
+function serializeWithFunctions(profile) {
+  return serialize(profile, { unsafe: true });
 }
 
 ////////////////layers
@@ -208,7 +217,7 @@ function writeAllWidgetResourceModules() {
     if (!isTest("widget", e, i, isThemeWidget, isOnscreen)) {
       return;
     }
-    utilscripts.writeWidgetResourceModule(basePath, e);
+    utilscripts.writeWidgetResourceModule(paths.buildSrc, e);
   });
 }
 
@@ -223,9 +232,9 @@ function mergeAndWriteWidgetManifests() {
     var segs = e.uri.split("/");
     segs.pop();
     var widgetFolder = segs.join("/");
-    var manifestFile = path.join(basePath, widgetFolder, "manifest.json");
+    var manifestFile = path.join(paths.buildSrc, widgetFolder, "manifest.json");
     var manifestJson = file.readJson(manifestFile);
-    manifestJson.location = path.join(basePath, widgetFolder);
+    manifestJson.location = path.join(paths.buildSrc, widgetFolder);
     manifestJson.category = "widget";
     if (manifestJson.featureActions) {
       utilscripts.addI18NFeatureActionsLabel(manifestJson);
@@ -239,7 +248,7 @@ function mergeAndWriteWidgetManifests() {
   appConfig._buildInfo.widgetManifestsMerged = true;
 
   let toPath = path.join(
-    basePath,
+    paths.buildSrc,
     "widgets/_build-generate_widgets-manifest.json"
   );
   file.writeJson(resultJson, toPath);
@@ -249,8 +258,8 @@ function widgetIsInPanel(uri) {
   var segs = uri.split("/");
   segs.pop();
   var folder = segs.join("/");
-  var manifestFile = path.join(basePath, folder, "manifest.json");
-  if (fs.existsSync(manifestFile)) {
+  var manifestFile = path.join(paths.buildSrc, folder, "manifest.json");
+  if (file.exists(manifestFile)) {
     var manifest = file.readJson(manifestFile);
     if (manifest.properties && manifest.properties.inPanel === false) {
       return false;
