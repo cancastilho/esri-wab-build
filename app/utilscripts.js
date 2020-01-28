@@ -106,91 +106,6 @@ function getWidgetConfigModule(widget) {
   return str;
 }
 
-function writeWidgetSettingResourceModule(basePath, widgetName) {
-  var modules = [];
-  if (!fs.existsSync(path.join(basePath, "widgets", widgetName, "setting"))) {
-    return;
-  }
-  console.log("write widget [", basePath, "] setting resource.");
-  if (
-    getWidgetSettingTemplateModule({ name: widgetName, basePath: basePath })
-  ) {
-    modules.push(
-      getWidgetSettingTemplateModule({ name: widgetName, basePath: basePath })
-    );
-  }
-  if (getWidgetSettingStyleModule({ name: widgetName, basePath: basePath })) {
-    modules.push(
-      getWidgetSettingStyleModule({ name: widgetName, basePath: basePath })
-    );
-  }
-  if (getWidgetSettingNlsModule({ name: widgetName, basePath: basePath })) {
-    modules.push(
-      getWidgetSettingNlsModule({ name: widgetName, basePath: basePath })
-    );
-  }
-
-  var deps = modules.map(function(module) {
-    return '"' + module + '"';
-  });
-
-  var str = "define([" + deps.join(",\n") + "], function(){});";
-  let toPath = path.join(
-    basePath,
-    "widgets",
-    widgetName,
-    "setting/_build-generate_module.js"
-  );
-  file.write(str, toPath);
-}
-
-function getWidgetSettingTemplateModule(widget) {
-  var str;
-  if (
-    fs.existsSync(
-      path.join(widget.basePath, "widgets", widget.name, "setting/Setting.html")
-    )
-  ) {
-    str = "dojo/text!./Setting.html";
-  }
-  return str;
-}
-
-function getWidgetSettingStyleModule(widget) {
-  var str;
-  if (
-    fs.existsSync(
-      path.join(
-        widget.basePath,
-        "widgets",
-        widget.name,
-        "setting/css/style.css"
-      )
-    )
-  ) {
-    str = "dojo/text!./css/style.css";
-  }
-  return str;
-}
-
-function getWidgetSettingNlsModule(widget) {
-  var str;
-  if (
-    fs.existsSync(
-      path.join(
-        widget.basePath,
-        "widgets",
-        widget.name,
-        "setting/nls/strings.js"
-      )
-    )
-  ) {
-    str = "dojo/i18n!./nls/strings";
-  }
-  return str;
-}
-
-////////////////////theme
 function writeThemeResourceModule(basePath, options) {
   var modules = [].concat(
     getThemePanelModules(basePath, options),
@@ -493,37 +408,6 @@ function copyPartAppSrc(from, to) {
   );
   docopy(path.join(from, "readme.html"), path.join(to, "readme.html"));
   docopy(path.join(from, "configs"), path.join(to, "configs"), true);
-}
-
-function copyFullAppSrc(from, to) {
-  docopy(path.join(from, "dynamic-modules"), path.join(to, "dynamic-modules"));
-  docopy(path.join(from, "images"), path.join(to, "images"));
-  docopy(path.join(from, "jimu.js"), path.join(to, "jimu.js"));
-  docopy(path.join(from, "libs"), path.join(to, "libs"));
-  docopy(path.join(from, "themes"), path.join(to, "themes"));
-  docopy(path.join(from, "widgets"), path.join(to, "widgets"));
-  docopy(path.join(from, "config.json"), path.join(to, "config.json"));
-  docopy(path.join(from, "env.js"), path.join(to, "env.js"));
-  docopy(path.join(from, "index.html"), path.join(to, "index.html"));
-  docopy(path.join(from, "index2.html"), path.join(to, "index2.html"));
-  docopy(path.join(from, "WEB-INF"), path.join(to, "WEB-INF"));
-  docopy(path.join(from, "META-INF"), path.join(to, "META-INF"));
-  docopy(path.join(from, "init.js"), path.join(to, "init.js"));
-  docopy(path.join(from, "simpleLoader.js"), path.join(to, "simpleLoader.js"));
-  docopy(path.join(from, "web.config"), path.join(to, "web.config"));
-  docopy(path.join(from, "readme.html"), path.join(to, "readme.html"));
-  docopy(
-    path.join(from, "config-readme.txt"),
-    path.join(to, "config-readme.txt")
-  );
-  docopy(path.join(from, ".jshintrc"), path.join(to, ".jshintrc"));
-  docopy(path.join(from, ".jshintignore"), path.join(to, ".jshintignore"));
-  docopy(path.join(from, "predefined-apps"), path.join(to, "predefined-apps"));
-  docopy(path.join(from, "copy-list.txt"), path.join(to, "copy-list.txt"));
-  docopy(
-    path.join(from, "sample-configs/config-demo.json"),
-    path.join(to, "sample-configs/config-demo.json")
-  );
 }
 
 function copyImageTest(src, dest) {
@@ -846,19 +730,6 @@ function cleanUncompressedSource(path) {
       /.uncompressed.js$/.test(filePath)
     ) {
       dodelete(filePath);
-    }
-  });
-}
-
-function visitSubFolders(folderPath, cb) {
-  var files = fs.readdirSync(folderPath);
-  files.forEach(function(fileName) {
-    var filePath = path.normalize(folderPath + "/" + fileName);
-
-    if (fs.statSync(filePath).isDirectory()) {
-      if (!cb(filePath, fileName, fs.readdirSync(filePath))) {
-        visitSubFolders(filePath, cb);
-      }
     }
   });
 }
