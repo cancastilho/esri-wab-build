@@ -3,16 +3,13 @@ const path = require("path");
 const fse = require("fs-extra");
 const vm = require("vm");
 const utilscripts = require("./utilscripts");
-const process = require("process");
+const paths = require("./paths");
+const file = require("./file");
 
 /*global basePath */
-let basePath = null;
-
-var appConfig, appConfigFile, rProfileFile, wProfileFile, profile;
-
-exports.setBasePath = function(appRoot) {
-  basePath = path.join(appRoot, "build-src");
-};
+var basePath = paths.buildSrc;
+var appConfig;
+var profile;
 
 function isTest(test, e, i, isThemeWidget, isOnscreen) {
   switch (test) {
@@ -52,54 +49,47 @@ function isTest(test, e, i, isThemeWidget, isOnscreen) {
   }
 }
 
-exports.setInfo = function(info) {
-  if (info.appConfigFile) {
-    appConfigFile = info.appConfigFile;
-  } else {
-    appConfigFile = path.join(basePath, "config.json");
-  }
-
-  appConfig = fse.readJsonSync(appConfigFile, "utf-8");
-  appConfig._buildInfo = {};
-
-  rProfileFile = path.join(__dirname, "_app.profile.js");
-  wProfileFile = path.join(basePath, "app.profile.js");
-
-  var profileStr = fs.readFileSync(rProfileFile, "utf-8");
+function loadProfileFile() {
+  var profileStr = file.read(paths._appProfileJs);
   profile = vm.runInThisContext(profileStr);
-};
+}
+function loadAppConfigFile() {
+  appConfig = file.readJson(paths.appConfigFile);
+  appConfig._buildInfo = {};
+}
 
 exports.prepare = function() {
-  addBuildLayers();
-  addBuildFiles();
-
+  loadProfileFile();
+  loadAppConfigFile();
+  addBuildLayersToProfile();
+  addBuildFilesToProfile();
   utilscripts.writeThemeResourceModule(basePath, appConfig);
   writeAllWidgetResourceModules();
-
   mergeAndWriteWidgetManifests();
-
-  writeAppConfig();
   writeProfile();
+  writeAppConfig();
 };
 
 function writeAppConfig() {
-  var segs = appConfigFile.split(path.sep);
+  let segs = paths.appConfigFile.split(path.sep);
   segs.pop();
-  var appConfigPath = segs.join(path.sep);
-  fse.writeJsonSync(
-    path.join(appConfigPath, "build-src", "_build-generate_config.json"),
-    appConfig,
-    "utf-8"
+  let appConfigPath = segs.join(path.sep);
+  let toPath = path.join(
+    appConfigPath,
+    "build-src",
+    "_build-generate_config.json"
   );
+  file.writeJson(appConfig, toPath);
 }
 
 function writeProfile() {
   var profileStr = "profile = " + JSON.stringify(profile, null, 2) + ";";
-  fs.writeFileSync(wProfileFile, profileStr, "utf-8");
+  let toPath = paths.generatedAppProfileJs;
+  file.write(profileStr, toPath);
 }
 
 ////////////////layers
-function addBuildLayers() {
+function addBuildLayersToProfile() {
   var dynamicLayers = getAllWidgetsLayers();
   dynamicLayers.push(getThemeLayer());
 
@@ -195,7 +185,7 @@ function getAllWidgetsLayers() {
 }
 
 /////////////build files
-function addBuildFiles() {
+function addBuildFilesToProfile() {
   if (!profile.files) {
     profile.files = [];
   }
@@ -234,7 +224,7 @@ function mergeAndWriteWidgetManifests() {
     segs.pop();
     var widgetFolder = segs.join("/");
     var manifestFile = path.join(basePath, widgetFolder, "manifest.json");
-    var manifestJson = fse.readJsonSync(manifestFile, "utf-8");
+    var manifestJson = file.readJson(manifestFile);
     manifestJson.location = path.join(basePath, widgetFolder);
     manifestJson.category = "widget";
     if (manifestJson.featureActions) {
@@ -248,11 +238,11 @@ function mergeAndWriteWidgetManifests() {
 
   appConfig._buildInfo.widgetManifestsMerged = true;
 
-  fse.writeJsonSync(
-    path.join(basePath, "widgets/_build-generate_widgets-manifest.json"),
-    resultJson,
-    "utf-8"
+  let toPath = path.join(
+    basePath,
+    "widgets/_build-generate_widgets-manifest.json"
   );
+  file.writeJson(resultJson, toPath);
 }
 
 function widgetIsInPanel(uri) {
@@ -261,7 +251,7 @@ function widgetIsInPanel(uri) {
   var folder = segs.join("/");
   var manifestFile = path.join(basePath, folder, "manifest.json");
   if (fs.existsSync(manifestFile)) {
-    var manifest = fse.readJsonSync(manifestFile, "utf-8");
+    var manifest = file.readJson(manifestFile);
     if (manifest.properties && manifest.properties.inPanel === false) {
       return false;
     } else {

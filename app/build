@@ -2,14 +2,11 @@
 
 const buildTool = require('./buildTool');
 const remoteBuild = require('./remoteBuild');
-const process = require('process');
+const args = require('process').argv;
 
-
-const args = process.argv;
-
-
-if (args.length > 2){
-   remoteBuild.buildApp(args[2]);
+if (args.length > 2) {
+    const buildPath = args[2];
+    remoteBuild.buildApp(buildPath);
 } else {
     buildTool.build();
 }

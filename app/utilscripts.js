@@ -2,6 +2,7 @@ var path = require("path");
 var fs = require("fs");
 var requirejs = require("requirejs");
 var fse = require("fs-extra");
+const file = require("./file");
 
 exports.writeWidgetResourceModule = writeWidgetResourceModule;
 exports.writeWidgetSettingResourceModule = writeWidgetSettingResourceModule;
@@ -52,15 +53,12 @@ function writeWidgetResourceModule(basePath, widget) {
   });
 
   var str = "define([" + deps.join(",\n") + "], function(){});";
-  fs.writeFileSync(
-    path.join(
-      basePath,
-      getAmdFolderFromUri(widget.uri),
-      "_build-generate_module.js"
-    ),
-    str,
-    "utf-8"
+  let toPath = path.join(
+    basePath,
+    getAmdFolderFromUri(widget.uri),
+    "_build-generate_module.js"
   );
+  file.write(str, toPath);
 }
 
 function getWidgetTemplateModule(widget) {
@@ -100,7 +98,8 @@ function getWidgetConfigModule(widget) {
   if (widget.config && typeof widget.config === "object") {
     return;
   } else if (
-    widget.config && fs.existsSync(path.join(widget.basePath, widget.config))
+    widget.config &&
+    fs.existsSync(path.join(widget.basePath, widget.config))
   ) {
     str = "dojo/text!" + widget.config;
   } else if (
@@ -142,16 +141,13 @@ function writeWidgetSettingResourceModule(basePath, widgetName) {
   });
 
   var str = "define([" + deps.join(",\n") + "], function(){});";
-  fs.writeFileSync(
-    path.join(
-      basePath,
-      "widgets",
-      widgetName,
-      "setting/_build-generate_module.js"
-    ),
-    str,
-    "utf-8"
+  let toPath = path.join(
+    basePath,
+    "widgets",
+    widgetName,
+    "setting/_build-generate_module.js"
   );
+  file.write(str, toPath);
 }
 
 function getWidgetSettingTemplateModule(widget) {
@@ -220,15 +216,19 @@ function writeThemeResourceModule(basePath, options) {
   } else {
     themeName = options;
   }
-  fs.writeFileSync(
-    path.join(basePath, "themes", themeName, "_build-generate_module.js"),
-    str,
-    "utf-8"
+  let toPath = path.join(
+    basePath,
+    "themes",
+    themeName,
+    "_build-generate_module.js"
   );
+  file.write(str, toPath);
 }
 
 function getThemePanelModules(basePath, options) {
-  var modules = [], appConfig, themeName;
+  var modules = [],
+    appConfig,
+    themeName;
   if (typeof options === "object") {
     appConfig = options;
     if (appConfig.widgetOnScreen.panel && appConfig.widgetOnScreen.panel.uri) {
@@ -252,18 +252,20 @@ function getThemePanelModules(basePath, options) {
   } else {
     themeName = options;
     if (fs.existsSync(path.join(basePath, themeName, "panels"))) {
-      fs
-        .readdirSync(path.join(basePath, themeName, "panels"))
-        .forEach(function(panelName) {
-          modules.push("./panels/" + panelName + "/Panel");
-        });
+      fs.readdirSync(path.join(basePath, themeName, "panels")).forEach(function(
+        panelName
+      ) {
+        modules.push("./panels/" + panelName + "/Panel");
+      });
     }
   }
   return modules;
 }
 
 function getThemeStyleModules(basePath, options) {
-  var modules = [], appConfig, themeName;
+  var modules = [],
+    appConfig,
+    themeName;
 
   var commonCssFile, defaultStyleFileName;
 
@@ -275,9 +277,10 @@ function getThemeStyleModules(basePath, options) {
   }
   commonCssFile = path.join(basePath, "themes", themeName, "common.css");
   if (appConfig) {
-    defaultStyleFileName = appConfig.theme.styles && appConfig.theme.styles[0]
-      ? appConfig.theme.styles && appConfig.theme.styles[0]
-      : "default";
+    defaultStyleFileName =
+      appConfig.theme.styles && appConfig.theme.styles[0]
+        ? appConfig.theme.styles && appConfig.theme.styles[0]
+        : "default";
   } else {
     defaultStyleFileName = "default";
   }
@@ -302,7 +305,9 @@ function getThemeStyleModules(basePath, options) {
 }
 
 function getThemeNlsModule(basePath, options) {
-  var modules = [], appConfig, themeName;
+  var modules = [],
+    appConfig,
+    themeName;
 
   if (typeof options === "object") {
     appConfig = options;
@@ -335,9 +340,8 @@ function addI18NFeatureActionsLabel(manifest) {
       path.join(manifest.location, "nls/strings.js")
     );
     if (defaultStrings.root && defaultStrings.root[key]) {
-      manifest[
-        "i18nLabels_featureAction_" + featureAction.name
-      ].defaultLabel = defaultStrings.root[key];
+      manifest["i18nLabels_featureAction_" + featureAction.name].defaultLabel =
+        defaultStrings.root[key];
     }
     for (var p in defaultStrings) {
       if (p === "root" || !defaultStrings[p]) {
@@ -353,9 +357,8 @@ function addI18NFeatureActionsLabel(manifest) {
         path.join(manifest.location, "nls", p, "strings.js")
       );
       if (localeStrings[key]) {
-        manifest["i18nLabels_featureAction_" + featureAction.name][
-          p
-        ] = localeStrings[key];
+        manifest["i18nLabels_featureAction_" + featureAction.name][p] =
+          localeStrings[key];
       }
     }
   });
@@ -379,18 +382,16 @@ function addI18NLabel(manifest) {
       if (manifest.layouts) {
         manifest.layouts.forEach(function(layout) {
           manifest["i18nLabels_layout_" + layout.name] = {};
-          manifest[
-            "i18nLabels_layout_" + layout.name
-          ].defaultLabel = defaultStrings.root["_layout_" + layout.name];
+          manifest["i18nLabels_layout_" + layout.name].defaultLabel =
+            defaultStrings.root["_layout_" + layout.name];
         });
       }
 
       if (manifest.styles) {
         manifest.styles.forEach(function(style) {
           manifest["i18nLabels_style_" + style.name] = {};
-          manifest[
-            "i18nLabels_style_" + style.name
-          ].defaultLabel = defaultStrings.root["_style_" + style.name];
+          manifest["i18nLabels_style_" + style.name].defaultLabel =
+            defaultStrings.root["_style_" + style.name];
         });
       }
     }
@@ -414,17 +415,15 @@ function addI18NLabel(manifest) {
     if (manifest.category === "theme") {
       if (manifest.layouts) {
         manifest.layouts.forEach(function(layout) {
-          manifest["i18nLabels_layout_" + layout.name][p] = localeStrings[
-            "_layout_" + layout.name
-          ];
+          manifest["i18nLabels_layout_" + layout.name][p] =
+            localeStrings["_layout_" + layout.name];
         });
       }
 
       if (manifest.styles) {
         manifest.styles.forEach(function(style) {
-          manifest["i18nLabels_style_" + style.name][p] = localeStrings[
-            "_style_" + style.name
-          ];
+          manifest["i18nLabels_style_" + style.name][p] =
+            localeStrings["_style_" + style.name];
         });
       }
     }
@@ -454,7 +453,8 @@ function visitElement(config, cb) {
         for (i = 0; i < config[section].groups.length; i++) {
           cb(config[section].groups[i], i, false, section === "widgetOnScreen");
           for (j = 0; j < config[section].groups[i].widgets.length; j++) {
-            isThemeWidget = config[section].groups[i].widgets[j].uri &&
+            isThemeWidget =
+              config[section].groups[i].widgets[j].uri &&
               config[section].groups[i].widgets[j].uri.indexOf(
                 "themes/" + config.theme.name
               ) > -1;
@@ -470,7 +470,8 @@ function visitElement(config, cb) {
 
       if (config[section].widgets) {
         for (i = 0; i < config[section].widgets.length; i++) {
-          isThemeWidget = config[section].widgets[i].uri &&
+          isThemeWidget =
+            config[section].widgets[i].uri &&
             config[section].widgets[i].uri.indexOf(
               "themes/" + config.theme.name
             ) > -1;
@@ -498,9 +499,6 @@ function copyPartAppSrc(from, to) {
   );
   docopy(path.join(from, "readme.html"), path.join(to, "readme.html"));
   docopy(path.join(from, "configs"), path.join(to, "configs"), true);
-  
-  // copies env.js from 2 to
-  changeApiUrlOnEnv(from, to);
 }
 
 function copyFullAppSrc(from, to) {
@@ -513,6 +511,9 @@ function copyFullAppSrc(from, to) {
   docopy(path.join(from, "config.json"), path.join(to, "config.json"));
   docopy(path.join(from, "env.js"), path.join(to, "env.js"));
   docopy(path.join(from, "index.html"), path.join(to, "index.html"));
+  docopy(path.join(from, "index2.html"), path.join(to, "index2.html"));
+  docopy(path.join(from, "WEB-INF"), path.join(to, "WEB-INF"));
+  docopy(path.join(from, "META-INF"), path.join(to, "META-INF"));
   docopy(path.join(from, "init.js"), path.join(to, "init.js"));
   docopy(path.join(from, "simpleLoader.js"), path.join(to, "simpleLoader.js"));
   docopy(path.join(from, "web.config"), path.join(to, "web.config"));
@@ -531,39 +532,91 @@ function copyFullAppSrc(from, to) {
   );
 }
 
-function copyImageTest(src, dest){
-	//directory
-	if (/^((?!\.[a-zA-Z]{1,4}).)*$/.test(src)) {
-	  console.log(src);
-	  return true;
-	}
-	if (/(images|icons)/.test(src)) {
-	  console.log(src);
-	  return true;
-	}
-	return false;
+function copyImageTest(src, dest) {
+  //directory
+  if (/^((?!\.[a-zA-Z]{1,4}).)*$/.test(src)) {
+    console.log(src);
+    return true;
+  }
+  if (/(images|icons)/.test(src)) {
+    console.log(src);
+    return true;
+  }
+  return false;
 }
 
 function copyAppBuildPackages(from, to) {
-  docopy(path.join(from, "dgrid/css"), path.join(to, "arcgis-js-api/dgrid/css"));
-  docopy(path.join(from, "dijit/icons"), path.join(to, "arcgis-js-api/dijit/icons"));
-  docopy(path.join(from, "dijit/themes/claro/claro.css"), path.join(to, "arcgis-js-api/dijit/themes/claro/claro.css"));
-  docopy(path.join(from, "dijit/themes/claro"), path.join(to, "arcgis-js-api/dijit/themes/claro"), null, copyImageTest);
-  docopy(path.join(from, "dojo/resources"), path.join(to, "arcgis-js-api/dojo/resources"));
-  docopy(path.join(from, "dojo/dojo.js"), path.join(to, "arcgis-js-api/dojo/dojo.js"));
+  docopy(
+    path.join(from, "dgrid/css"),
+    path.join(to, "arcgis-js-api/dgrid/css")
+  );
+  docopy(
+    path.join(from, "dijit/icons"),
+    path.join(to, "arcgis-js-api/dijit/icons")
+  );
+  docopy(
+    path.join(from, "dijit/themes/claro/claro.css"),
+    path.join(to, "arcgis-js-api/dijit/themes/claro/claro.css")
+  );
+  docopy(
+    path.join(from, "dijit/themes/claro"),
+    path.join(to, "arcgis-js-api/dijit/themes/claro"),
+    null,
+    copyImageTest
+  );
+  docopy(
+    path.join(from, "dojo/resources"),
+    path.join(to, "arcgis-js-api/dojo/resources")
+  );
+  docopy(
+    path.join(from, "dojo/dojo.js"),
+    path.join(to, "arcgis-js-api/dojo/dojo.js")
+  );
   docopy(path.join(from, "dojo/nls"), path.join(to, "arcgis-js-api/dojo/nls"));
-  docopy(path.join(from, "dojox/gfx/svg.js"), path.join(to, "arcgis-js-api/dojox/gfx/svg.js"));
-  docopy(path.join(from, "dojox/grid/resources"), path.join(to, "arcgis-js-api/dojox/grid/resources"), null, copyImageTest);
-  docopy(path.join(from, "dojox/layout/resources"), path.join(to, "arcgis-js-api/dojox/layout/resources"), null, copyImageTest);
-  docopy(path.join(from, "dojox/layout/resources/ResizeHandle.css"), path.join(to, "arcgis-js-api/dojox/layout/resources/ResizeHandle.css"));
-  docopy(path.join(from, "dojox/layout/resources/ResizeHandle.css"), path.join(to, "arcgis-js-api/dojox/layout/resources/ResizeHandle.css"));
+  docopy(
+    path.join(from, "dojox/gfx/svg.js"),
+    path.join(to, "arcgis-js-api/dojox/gfx/svg.js")
+  );
+  docopy(
+    path.join(from, "dojox/grid/resources"),
+    path.join(to, "arcgis-js-api/dojox/grid/resources"),
+    null,
+    copyImageTest
+  );
+  docopy(
+    path.join(from, "dojox/layout/resources"),
+    path.join(to, "arcgis-js-api/dojox/layout/resources"),
+    null,
+    copyImageTest
+  );
+  docopy(
+    path.join(from, "dojox/layout/resources/ResizeHandle.css"),
+    path.join(to, "arcgis-js-api/dojox/layout/resources/ResizeHandle.css")
+  );
   docopy(path.join(from, "esri/css"), path.join(to, "arcgis-js-api/esri/css"));
-  docopy(path.join(from, "esri/dijit"), path.join(to, "arcgis-js-api/esri/dijit"), null, copyImageTest);
-  docopy(path.join(from, "esri/images"), path.join(to, "arcgis-js-api/esri/images"));
-  docopy(path.join(from, "esri/main.js"), path.join(to, "arcgis-js-api/esri/main.js"));
-  docopy(path.join(from, "esri/layers/VectorTileLayerImpl.js"), path.join(to, "arcgis-js-api/esri/layers/VectorTileLayerImpl.js"));
-  docopy(path.join(from, "esri/layers/vectorTiles"), path.join(to, "arcgis-js-api/esri/layers/vectorTiles"));
-  docopy(path.join(from, "esri/layers/nls"), path.join(to, "arcgis-js-api/esri/layers/nls"));
+  docopy(
+    path.join(from, "esri/dijit"),
+    path.join(to, "arcgis-js-api/esri/dijit"),
+    null,
+    copyImageTest
+  );
+  docopy(
+    path.join(from, "esri/images"),
+    path.join(to, "arcgis-js-api/esri/images")
+  );
+  docopy(
+    path.join(from, "esri/main.js"),
+    path.join(to, "arcgis-js-api/esri/main.js")
+  );
+  docopy(
+    path.join(from, "esri/layers/VectorTileLayerImpl.js"),
+    path.join(to, "arcgis-js-api/esri/layers/VectorTileLayerImpl.js")
+  );
+  docopy(
+    path.join(from, "esri/layers/vectorTiles"),
+    path.join(to, "arcgis-js-api/esri/layers/vectorTiles")
+  );
+  // docopy(path.join(from, "esri/layers/nls"), path.join(to, "arcgis-js-api/esri/layers/nls")); wont work in api version 3.20
   docopy(path.join(from, "jimu"), path.join(to, "jimu.js"));
   docopy(path.join(from, "themes"), path.join(to, "themes"));
   docopy(path.join(from, "widgets"), path.join(to, "widgets"));
@@ -575,16 +628,12 @@ function copyAppBuildPackages(from, to) {
     true
   );
   docopy(path.join(from, "config.json"), path.join(to, "config.json"));
-}
 
-function changeApiUrlOnEnv(from, to){
-  var apiUrl ='./arcgis-js-api';
-  var apiRegEx = /(https:)?\/\/js.arcgis.com\/\d\.\d{1,2}/i;
-  var fileContent = fs.readFileSync(path.join(from, 'env.js'), { encoding: 'utf-8' });
-
-  fileContent = fileContent.replace(apiRegEx, apiUrl);
-
-  fs.writeFileSync(path.join(to, 'env.js'), fileContent, 'utf-8');
+  //ColorPicker needed by draw widget
+  docopy(
+    path.join(from, "dojox/widget/ColorPicker"),
+    path.join(to, "arcgis-js-api/dojox/widget/ColorPicker")
+  );
 }
 
 function docopy(s, d, check, filterFunc) {
@@ -599,13 +648,8 @@ function docopy(s, d, check, filterFunc) {
   }
 }
 
-function dodelete(f, check) {
-  if (check) {
-    if (fs.existsSync(f)) {
-      console.log("delete", f);
-      fse.removeSync(f);
-    }
-  } else {
+function dodelete(f) {
+  if (fs.existsSync(f)) {
     console.log("delete", f);
     fse.removeSync(f);
   }
@@ -639,7 +683,8 @@ function findDuplicatedModules(buildReportFile) {
   }
   var lines = report.split(splitor);
   var startLine = -1;
-  var layers = [], currentLayer;
+  var layers = [],
+    currentLayer;
   for (var i = 0; i < lines.length; i++) {
     if (lines[i] === "Layer Contents:") {
       startLine = i;
@@ -718,7 +763,7 @@ function cleanApp(appPath) {
   cleanJimu();
   fs.readdirSync(path.join(appPath, "themes")).forEach(function(themeName) {
     removeNlsSource(path.join(appPath, "themes", themeName, "nls"));
-    dodelete(path.join(appPath, "themes", themeName, "nls/strings.js"), true);
+    dodelete(path.join(appPath, "themes", themeName, "nls/strings.js"));
 
     var themeWidgetsPath = path.join(appPath, "themes", themeName, "widgets");
     if (fs.existsSync(themeWidgetsPath)) {
@@ -735,24 +780,13 @@ function cleanApp(appPath) {
     fs.readdirSync(widgetsPath).forEach(function(widgetName) {
       removeNlsSource(path.join(widgetsPath, widgetName, "nls"));
       removeNlsSource(path.join(widgetsPath, widgetName, "setting/nls"));
-
-      dodelete(path.join(widgetsPath, widgetName, "Widget.html"), true);
-      dodelete(path.join(widgetsPath, widgetName, "manifest.json"), true);
-      dodelete(path.join(widgetsPath, widgetName, "css/style.css"), true);
-      dodelete(path.join(widgetsPath, widgetName, "nls/strings.js"), true);
-
-      dodelete(
-        path.join(widgetsPath, widgetName, "setting/Setting.html"),
-        true
-      );
-      dodelete(
-        path.join(widgetsPath, widgetName, "setting/css/style.css"),
-        true
-      );
-      dodelete(
-        path.join(widgetsPath, widgetName, "setting/nls/strings.js"),
-        true
-      );
+      dodelete(path.join(widgetsPath, widgetName, "Widget.html"));
+      dodelete(path.join(widgetsPath, widgetName, "manifest.json"));
+      dodelete(path.join(widgetsPath, widgetName, "css/style.css"));
+      dodelete(path.join(widgetsPath, widgetName, "nls/strings.js"));
+      dodelete(path.join(widgetsPath, widgetName, "setting/Setting.html"));
+      dodelete(path.join(widgetsPath, widgetName, "setting/css/style.css"));
+      dodelete(path.join(widgetsPath, widgetName, "setting/nls/strings.js"));
     });
   }
 
@@ -767,7 +801,7 @@ function cleanApp(appPath) {
       }
     });
 
-    dodelete(path.join(appPath, "jimu.js/LayerInfos"), true);
+    dodelete(path.join(appPath, "jimu.js/LayerInfos"));
 
     //remove framework files
     fs.readdirSync(path.join(appPath, "jimu.js")).forEach(function(file) {
@@ -797,10 +831,9 @@ function removeNlsSource(folderPath) {
 
 function cleanFilesInAppSource(appPath) {
   cleanBuildeGeneratedFiles(appPath);
-
-  dodelete(path.join(appPath, "dynamic-modules/nls"), true);
-  dodelete(path.join(appPath, "dynamic-modules/themes"), true);
-  dodelete(path.join(appPath, "dynamic-modules/widgets"), true);
+  dodelete(path.join(appPath, "dynamic-modules/nls"));
+  dodelete(path.join(appPath, "dynamic-modules/themes"));
+  dodelete(path.join(appPath, "dynamic-modules/widgets"));
 }
 
 function cleanBuildeGeneratedFiles(path) {
@@ -815,7 +848,8 @@ function cleanBuildeGeneratedFiles(path) {
 function cleanUncompressedSource(path) {
   visitFolderFiles(path, function(filePath) {
     if (
-      !fs.statSync(filePath).isDirectory() && /.uncompressed.js$/.test(filePath)
+      !fs.statSync(filePath).isDirectory() &&
+      /.uncompressed.js$/.test(filePath)
     ) {
       dodelete(filePath);
     }

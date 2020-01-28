@@ -1,50 +1,80 @@
+const fs = require("fs-extra");
+const path = require("path");
+const utilscripts = require("./utilscripts");
+const dodelete = require("./utilscripts").dodelete;
+const docopy = require("./utilscripts").docopy;
+const prepareScript = require("./prebuild");
+const execSync = require("child_process").execSync;
+const AdmZip = require("adm-zip");
+const babylon = require("babylon");
+const paths = require("./paths");
+const file = require("./file");
+
+const filesAndDirectories = [
+  "jimu.js",
+  "themes",
+  "libs",
+  "dynamic-modules",
+  "config.json",
+  "widgets",
+  "META-INF",
+  "WEB-INF",
+  "index2.html"
+];
+
 exports.build = function(buildPath) {
-  console.log("########## BUILD START TIME: " + new Date() + " ##########");
+  paths.setAppRoot(buildPath);
+  let startTime = new Date();
+  console.log(`########## BUILD START TIME: ${startTime} ##########`);
+  createOrCleanDirectory(paths.buildSrc);
+  copyFromAppRootToBuildSrc(filesAndDirectories);
+  installDependenciesInBuildSrc(getBowerDependencies());
+  createOrCleanDirectory(paths.buildOutput);
+  generateAppProfileFile();
+  generateAppConfigFile();
+  defineDojoConfig();
+  runDojoBuild();
+  utilscripts.cleanUncompressedSource(paths.appPackages);
+  createOrCleanDirectory(paths.appOutput);
+  copyBuiltAppToAppOutput();
+  utilscripts.cleanApp(paths.appOutput);
+  utilscripts.cleanFilesInAppSource(paths.appRoot);
+  dodelete(paths.appPackages);
+  let promise = createZipFile();
+  return promise;
+};
 
-  const fs = require("fs-extra");
-  const path = require("path");
-  const rimraf = require("rimraf");
-  const utilscripts = require("./utilscripts");
-  const prepareScript = require("./prebuild");
-  const copyScript = require("./copyapp");
-  const process = require("process");
-  const execSync = require("child_process").execSync;
-  const AdmZip = require("adm-zip");
-  const babylon = require("babylon");
+function generateAppProfileFile() {
+  prepareScript.prepare();
+  console.log("Current location: " + paths.appRoot);
+}
 
-  const appRoot = buildPath || process.cwd();
+function generateAppConfigFile() {
+  //currently done inside generateAppProfileFile
+}
 
-  rimraf.sync(path.join(appRoot, "build-src"));
-  fs.mkdirSync(path.join(appRoot, "build-src"));
+function createOrCleanDirectory(pathToDirectory) {
+  dodelete(pathToDirectory);
+  fs.mkdirSync(pathToDirectory);
+}
 
-  fs.copySync(
-    path.join(appRoot, "jimu.js"),
-    path.join(appRoot, "build-src", "jimu.js")
-  );
-  fs.copySync(
-    path.join(appRoot, "config.json"),
-    path.join(appRoot, "build-src", "config.json")
-  );
-  fs.copySync(
-    path.join(appRoot, "widgets"),
-    path.join(appRoot, "build-src", "widgets")
-  );
-  fs.copySync(
-    path.join(appRoot, "themes"),
-    path.join(appRoot, "build-src", "themes")
-  );
-  fs.copySync(
-    path.join(appRoot, "libs"),
-    path.join(appRoot, "build-src", "libs")
-  );
-  fs.copySync(
-    path.join(appRoot, "dynamic-modules"),
-    path.join(appRoot, "build-src", "dynamic-modules")
-  );
+function copyFromAppRootToBuildSrc(filesAndDirectories) {
+  console.log(`Copying many files from ${paths.appRoot}`);
+  console.log(filesAndDirectories);
+  filesAndDirectories.forEach(function(name) {
+    const from = path.join(paths.appRoot, name);
+    const to = path.join(paths.buildSrc, name);
+    fs.copySync(from, to);
+  });
+}
 
-  const syncArgs = { cwd: path.join(appRoot, "build-src"), stdio: [0, 1, 2] };
+function getBowerDependencies() {
+  const apiVersion = getArcgisJsApiVersion(paths.appRoot);
+  return getDependenciesForApi(apiVersion);
+}
 
-  const envJsAsText = fs.readFileSync(path.join(appRoot, "env.js"), "utf8");
+function getArcgisJsApiVersion() {
+  const envJsAsText = file.read(paths.envJsFile);
   const envJs = babylon.parse(envJsAsText);
   const apiVersionIndex = envJs.tokens.findIndex(function(token) {
     if (token.value === "apiVersion") {
@@ -53,7 +83,11 @@ exports.build = function(buildPath) {
     return false;
   });
   const apiVersion = envJs.tokens[apiVersionIndex + 2].value;
+  console.log("Arcgis JS Api version found in env.js: " + apiVersion);
+  return apiVersion;
+}
 
+function getDependenciesForApi(apiVersion) {
   // We always include the arcgis-js-api dependency. If the JS API version is greater than 3.25, we must include dijit-themes:
   // https://github.com/Esri/jsapi-resources/commit/7f26c7bc7a1ee305102cd7b1f95d1631df0edbd5#diff-265400d6fce2c9b60ecb6dbea36d979f
   let dependencies = [
@@ -65,33 +99,20 @@ exports.build = function(buildPath) {
       "dijit-themes=https://github.com/dojo/dijit-themes.git#1.14.0"
     );
   }
-  execSync(
-    `bower install ${dependencies.join(
-      " "
-    )} --force-latest  --config.directory=.`,
-    syncArgs
-  );
+  return dependencies;
+}
 
-  let buildOutput = appRoot + path.sep + "buildOutput";
-  let appPackages = buildOutput + path.sep + "app-packages";
-  let appOutput = buildOutput + path.sep + "app";
+function installDependenciesInBuildSrc(dependencies) {
+  let deps = dependencies.join(" ");
+  let command = `bower install ${deps} --force-latest --config.directory=.`;
+  console.log("Installing dependencies in: " + paths.buildSrc);
+  execute(command, paths.buildSrc);
+}
 
-  rimraf.sync(buildOutput);
-  fs.mkdirSync(buildOutput);
-
-  prepareScript.setBasePath(appRoot);
-
-  prepareScript.setInfo({
-    appConfigFile: appRoot + path.sep + "config.json"
-  });
-
-  prepareScript.prepare();
-  console.log("Current location: " + appRoot);
-
+function defineDojoConfig() {
   let loadModule = "build";
-
   dojoConfig = {
-    baseUrl: path.join(appRoot, "build-src"), // Where we will put our packages
+    baseUrl: paths.buildSrc, // Where we will put our packages
     async: 1, // We want to make sure we are using the "modern" loader
     hasCache: {
       "host-node": 1, // Ensure we "force" the loader into Node.js mode
@@ -104,64 +125,80 @@ exports.build = function(buildPath) {
     packages: [
       {
         name: "dojo",
-        location: path.join(appRoot, "build-src", "dojo")
+        location: path.join(paths.buildSrc, "dojo")
+      },
+      {
+        name: "pmm",
+        location: path.join(paths.buildSrc, "widgets/pmm")
       },
       {
         name: "build",
-        location: path.join(appRoot, "build-src", "util/build")
+        location: path.join(paths.buildSrc, "util/build")
       }
     ],
     deps: [loadModule] // And array of modules to load on "boot"
   };
+}
 
-  process.argv[2] = "load=build";
-  process.argv[3] = "profile=app.profile.js";
-
+function runDojoBuild() {
   try {
-    execSync(
-      "node " +
-        path.join("dojo", "dojo.js") +
-        " load=build profile=app.profile.js",
-      syncArgs
-    );
+    let dojoJs = path.join("dojo", "dojo.js");
+    let command = `node ${dojoJs} load=build profile=app.profile.js`;
+    execute(command, paths.buildSrc);
     console.log("build finished");
   } catch (e) {
     console.log('build always "fails"');
   }
+}
 
-  copyScript.copy(
-    {
-      buildRoot: appRoot,
-      appOutputPath: path.join(appRoot, "buildOutput/app"),
-      appPackagePath: path.join(appRoot, "buildOutput/app-packages")
-    },
-    {}
-  );
+function execute(command, where) {
+  const execArgs = {
+    cwd: where,
+    stdio: [0, 1, 2]
+  };
+  console.log("Running " + command);
+  execSync(command, execArgs);
+}
 
-  utilscripts.cleanApp(path.join(appRoot, "buildOutput/app"));
-  utilscripts.cleanFilesInAppSource(appRoot);
-
-  // Return a promise so the caller knows when the build is complete
+function createZipFile() {
   return new Promise((resolve, reject) => {
-    rimraf(path.join(appRoot, "buildOutput/app-packages"), () => {
+    try {
       const zip = new AdmZip();
-      const outputPath = path.join(appRoot, "buildOutput", "app");
-      const outputZipPath = path.join(appRoot, "buildOutput", "app.zip");
-
-      try {
-        zip.addLocalFolder(outputPath);
-        zip.writeZip(outputZipPath);
-
-        console.log("########## BUILD END TIME: " + new Date() + " ##########");
-        // Let the caller know useful path information
-        resolve({
-          outputPath: outputPath,
-          outputZipPath: outputZipPath
-        });
-      } catch (err) {
-        console.log("Oh no! There was an error zipping the final build.", err);
-        reject(err);
-      }
-    });
+      zip.addLocalFolder(paths.appOutput);
+      zip.writeZip(paths.outputZip);
+      console.log("########## BUILD END TIME: " + new Date() + " ##########");
+      resolve({
+        outputPath: paths.appOutput,
+        outputZipPath: paths.outputZip
+      });
+    } catch (err) {
+      console.log("Oh no! There was an error zipping the final build.", err);
+      reject(err);
+    }
   });
-};
+}
+
+function copyBuiltAppToAppOutput() {
+  console.log("Copying built app to " + paths.appOutput);
+  createDirectory(paths.appOutput);
+  createDirectory(paths.appOutputJimuJs);
+  createDirectory(paths.appOutputArcgisJsApi);
+  utilscripts.copyPartAppSrc(paths.appRoot, paths.appOutput);
+  copyEnvJsAndReplaceApiUrl(paths.appOutput);
+  utilscripts.copyAppBuildPackages(paths.appPackages, paths.appOutput);
+  docopy(paths.appPackagesBuildReport, paths.appOutputBuildReport);
+}
+
+function createDirectory(path) {
+  console.log("Creating  ", path);
+  fs.mkdirsSync(path);
+}
+
+function copyEnvJsAndReplaceApiUrl(to) {
+  var newApiUrl = "./arcgis-js-api";
+  var oldApiRegEx = /(https:)?\/\/js.arcgis.com\/\d\.\d{1,2}/i;
+  var fileContent = file.read(paths.envJsFile);
+  fileContent = fileContent.replace(oldApiRegEx, newApiUrl);
+  let toPath = path.join(to, "env.js");
+  file.write(fileContent, toPath);
+}

@@ -17,15 +17,16 @@ profile = {
   internStrings: true,
   mini: true,
 
-  localeList:
-    "ar,cs,da,de,en,el,es,et,fi,fr,he,it,ja,ko,lt,lv,nb,nl,pl,pt-br,pt-pt,ro,ru,sv,th,tr,zh-cn,vi",
+  localeList: "en-us,pt-br",
+  //,ar,cs,da,de,en,el,es,et,fi,fr,he,it,ja,ko,lt,lv,nb,nl,pl,pt-br,pt-pt,ro,ru,sv,th,tr,zh-cn,vi",
 
   selectorEngine: "acme",
   stripConsole: "none",
 
   map: {
     "*": {
-      "dojox/dgauges": "dgauges"
+      "dojox/dgauges": "dgauges",
+      pmm: "widgets/pmm"
     }
   },
 
@@ -68,7 +69,8 @@ profile = {
     },
     {
       name: "moment",
-      location: "./moment"
+      location: "./moment",
+      main: "moment"
     },
     {
       name: "esri",
@@ -93,6 +95,10 @@ profile = {
     {
       name: "dynamic-modules",
       location: "./dynamic-modules"
+    },
+    {
+      name: "pmm",
+      location: "./widgets/pmm"
     }
   ],
 
@@ -116,12 +122,18 @@ profile = {
         "dgrid/TouchScroll",
         "dgrid/util/touch",
         "dgrid/util/has-css3",
-        "dojo/selector/lite"
+        "dojo/selector/lite",
+
+        "esri/arcgis/Portal",
+        "dojox/widget/ColorPicker",
+        "moment/moment",
+        "moment/locale/pt-br"
       ]
     },
+
     "esri/layers/VectorTileLayerImpl": {
-      include: ["esri/layers/VectorTileLayerImpl"],
-      includeLocales: ["en-us"]
+      include: ["esri/layers/VectorTileLayerImpl"]
+      // ,includeLocales: ["en-us","pt-br"]
     },
     "esri/layers/support/webglDeps": {
       include: ["esri/layers/support/webglDeps"],
@@ -142,6 +154,7 @@ profile = {
     "dynamic-modules/postload": {
       include: []
     },
+
     "jimu/main": {
       include: [
         "jimu/BaseWidget",
@@ -161,7 +174,7 @@ profile = {
         "jimu/WidgetManager",
         "jimu/PanelManager",
         "jimu/DataManager",
-        "jimu/DataSourceManager",
+        // "jimu/DataSourceManager",
         "jimu/LayoutManager",
         "jimu/PoolControllerMixin",
         "jimu/SpatialReference/utils",
@@ -200,8 +213,8 @@ profile = {
         "jimu/dijit/TabContainer3",
         "jimu/dijit/TileLayoutContainer",
         "jimu/dijit/DrawBox",
-        "jimu/dijit/URLInput",
-        "jimu/dijit/GridLayout"
+        "jimu/dijit/URLInput"
+        // "jimu/dijit/GridLayout"
       ],
       exclude: ["esri/main", "libs/main"],
       discard: true
@@ -256,7 +269,7 @@ profile = {
     "dojo-undef-api": 0,
     "dojo-v1x-i18n-Api": 1, // we still need i18n.getLocalization
     "dojo-xhr-factory": 0,
-    dom: -1,
+    dom: 1,
     "host-browser": 1,
     "extend-dojo": 1,
     "extend-esri": 0

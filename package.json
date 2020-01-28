@@ -29,7 +29,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/gbochenek/esri-wab-build"
+    "url": "https://github.com/cancastilho/esri-wab-build"
   },
   "dependencies": {
     "adm-zip": "^0.4.11",
