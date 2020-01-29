@@ -10,8 +10,6 @@ exports.visitElement = visitElement;
 exports.addI18NFeatureActionsLabel = addI18NFeatureActionsLabel;
 exports.addI18NLabel = addI18NLabel;
 exports.getAmdFolderFromUri = getAmdFolderFromUri;
-exports.copyPartAppSrc = copyPartAppSrc;
-exports.copyAppBuildPackages = copyAppBuildPackages;
 exports.docopy = docopy;
 exports.dodelete = dodelete;
 exports.findDuplicatedModules = findDuplicatedModules;
@@ -396,20 +394,6 @@ function visitElement(config, cb) {
   }
 }
 
-function copyPartAppSrc(from, to) {
-  docopy(path.join(from, "index.html"), path.join(to, "index.html"));
-  docopy(path.join(from, "init.js"), path.join(to, "init.js"));
-  docopy(path.join(from, "simpleLoader.js"), path.join(to, "simpleLoader.js"));
-  docopy(path.join(from, "web.config"), path.join(to, "web.config"));
-  docopy(path.join(from, "images"), path.join(to, "images"));
-  docopy(
-    path.join(from, "config-readme.txt"),
-    path.join(to, "config-readme.txt")
-  );
-  docopy(path.join(from, "readme.html"), path.join(to, "readme.html"));
-  docopy(path.join(from, "configs"), path.join(to, "configs"), true);
-}
-
 function copyImageTest(src, dest) {
   //directory
   if (/^((?!\.[a-zA-Z]{1,4}).)*$/.test(src)) {
@@ -421,97 +405,6 @@ function copyImageTest(src, dest) {
     return true;
   }
   return false;
-}
-
-function copyAppBuildPackages(from, to) {
-  docopy(
-    path.join(from, "dgrid/css"),
-    path.join(to, "arcgis-js-api/dgrid/css")
-  );
-  docopy(
-    path.join(from, "dijit/icons"),
-    path.join(to, "arcgis-js-api/dijit/icons")
-  );
-  docopy(
-    path.join(from, "dijit/themes/claro/claro.css"),
-    path.join(to, "arcgis-js-api/dijit/themes/claro/claro.css")
-  );
-  docopy(
-    path.join(from, "dijit/themes/claro"),
-    path.join(to, "arcgis-js-api/dijit/themes/claro"),
-    null,
-    copyImageTest
-  );
-  docopy(
-    path.join(from, "dojo/resources"),
-    path.join(to, "arcgis-js-api/dojo/resources")
-  );
-  docopy(
-    path.join(from, "dojo/dojo.js"),
-    path.join(to, "arcgis-js-api/dojo/dojo.js")
-  );
-  docopy(path.join(from, "dojo/nls"), path.join(to, "arcgis-js-api/dojo/nls"));
-  docopy(
-    path.join(from, "dojox/gfx/svg.js"),
-    path.join(to, "arcgis-js-api/dojox/gfx/svg.js")
-  );
-  docopy(
-    path.join(from, "dojox/grid/resources"),
-    path.join(to, "arcgis-js-api/dojox/grid/resources"),
-    null,
-    copyImageTest
-  );
-  docopy(
-    path.join(from, "dojox/layout/resources"),
-    path.join(to, "arcgis-js-api/dojox/layout/resources"),
-    null,
-    copyImageTest
-  );
-  docopy(
-    path.join(from, "dojox/layout/resources/ResizeHandle.css"),
-    path.join(to, "arcgis-js-api/dojox/layout/resources/ResizeHandle.css")
-  );
-  docopy(path.join(from, "esri/css"), path.join(to, "arcgis-js-api/esri/css"));
-  docopy(
-    path.join(from, "esri/dijit"),
-    path.join(to, "arcgis-js-api/esri/dijit"),
-    null,
-    copyImageTest
-  );
-  docopy(
-    path.join(from, "esri/images"),
-    path.join(to, "arcgis-js-api/esri/images")
-  );
-  docopy(
-    path.join(from, "esri/main.js"),
-    path.join(to, "arcgis-js-api/esri/main.js")
-  );
-  docopy(
-    path.join(from, "esri/layers/VectorTileLayerImpl.js"),
-    path.join(to, "arcgis-js-api/esri/layers/VectorTileLayerImpl.js")
-  );
-  docopy(
-    path.join(from, "esri/layers/vectorTiles"),
-    path.join(to, "arcgis-js-api/esri/layers/vectorTiles")
-  );
-  // docopy(path.join(from, "esri/layers/nls"), path.join(to, "arcgis-js-api/esri/layers/nls")); wont work in api version 3.20
-  docopy(path.join(from, "jimu"), path.join(to, "jimu.js"));
-  docopy(path.join(from, "themes"), path.join(to, "themes"));
-  docopy(path.join(from, "widgets"), path.join(to, "widgets"));
-  docopy(path.join(from, "libs"), path.join(to, "libs"));
-  docopy(path.join(from, "dynamic-modules"), path.join(to, "dynamic-modules"));
-  docopy(
-    path.join(from, "predefined-apps/default/config.json"),
-    path.join(to, "predefined-apps/default/config.json"),
-    true
-  );
-  docopy(path.join(from, "config.json"), path.join(to, "config.json"));
-
-  //ColorPicker needed by draw widget
-  docopy(
-    path.join(from, "dojox/widget/ColorPicker"),
-    path.join(to, "arcgis-js-api/dojox/widget/ColorPicker")
-  );
 }
 
 function docopy(s, d, check, filterFunc) {

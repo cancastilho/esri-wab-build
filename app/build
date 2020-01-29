@@ -2,6 +2,8 @@
 
 const buildTool = require('./buildTool');
 const remoteBuild = require('./remoteBuild');
+const file = require('./file');
+const paths = require('./paths');
 const args = require('process').argv;
 
 if (args.length > 2) {
@@ -10,3 +12,5 @@ if (args.length > 2) {
 } else {
     buildTool.build();
 }
+
+file.createZipFromTo(paths.appOutput, paths.outputZip);

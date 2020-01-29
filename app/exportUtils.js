@@ -3,7 +3,7 @@
 const fs = require("fs-extra");
 const path = require("path");
 const hjson = require("hjson");
-const rimraf = require("rimraf");
+const dodelete = require("./utilscripts").dodelete;
 
 /*******************
  *  exportApp
@@ -57,7 +57,7 @@ exports._cleanDist = function() {
 
   if (fs.existsSync(distDir)) {
     console.log("Cleaning dist directory...");
-    rimraf.sync(distDir);
+    dodelete(distDir);
   }
 };
 

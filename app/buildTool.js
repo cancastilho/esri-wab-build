@@ -1,59 +1,45 @@
-const fs = require("fs-extra");
 const path = require("path");
 const utilscripts = require("./utilscripts");
-const dodelete = require("./utilscripts").dodelete;
-const docopy = require("./utilscripts").docopy;
 const preparebuild = require("./prebuild");
 const execSync = require("child_process").execSync;
-const AdmZip = require("adm-zip");
 const babylon = require("babylon");
 const paths = require("./paths");
 const file = require("./file");
+const copyFilesFromTo = require("./file").copyFilesFromTo;
 
-const filesAndDirectories = [
-  "jimu.js",
-  "themes",
-  "libs",
-  "dynamic-modules",
-  "config.json",
-  "widgets"
-];
+exports.build = build;
 
-exports.build = function(buildPath) {
+function build(buildPath) {
   paths.setAppRoot(buildPath);
   let startTime = new Date();
   console.log(`########## BUILD START TIME: ${startTime} ##########`);
-  createOrCleanDirectory(paths.buildSrc);
-  copyFromAppRootToBuildSrc(filesAndDirectories);
+  file.createOrCleanDirectory(paths.buildSrc);
+  copyFromAppRootToBuildSrc();
   installDependenciesInBuildSrc(getBowerDependencies());
-  createOrCleanDirectory(paths.buildOutput);
+  file.createOrCleanDirectory(paths.buildOutput);
   preparebuild.generateAppProfileFile();
   preparebuild.generateAppConfigFile();
   defineDojoConfig();
   runDojoBuild();
   utilscripts.cleanUncompressedSource(paths.appPackages);
-  createOrCleanDirectory(paths.appOutput);
-  copyBuiltAppToAppOutput();
+  file.createOrCleanDirectory(paths.appOutput);
+  copyBuiltAppTo(paths.appOutput);
   utilscripts.cleanApp(paths.appOutput);
   utilscripts.cleanFilesInAppSource(paths.appRoot);
-  dodelete(paths.appPackages);
-  let promise = createZipFile();
-  return promise;
-};
-
-function createOrCleanDirectory(pathToDirectory) {
-  dodelete(pathToDirectory);
-  fs.mkdirSync(pathToDirectory);
+  file.remove(paths.appPackages);
+  console.log("########## BUILD END TIME: " + new Date() + " ##########");
 }
 
-function copyFromAppRootToBuildSrc(filesAndDirectories) {
-  console.log(`Copying many files from ${paths.appRoot}`);
-  console.log(filesAndDirectories.join("\n"));
-  filesAndDirectories.forEach(function(name) {
-    const from = path.join(paths.appRoot, name);
-    const to = path.join(paths.buildSrc, name);
-    fs.copySync(from, to);
-  });
+function copyFromAppRootToBuildSrc() {
+  const filesAndDirectories = [
+    "jimu.js",
+    "themes",
+    "libs",
+    "dynamic-modules",
+    "config.json",
+    "widgets"
+  ];
+  copyFilesFromTo(filesAndDirectories, paths.appRoot, paths.buildSrc);
 }
 
 function getBowerDependencies() {
@@ -61,8 +47,8 @@ function getBowerDependencies() {
   return getDependenciesForApi(apiVersion);
 }
 
-function getArcgisJsApiVersion() {
-  const envJsAsText = file.read(paths.envJsFile);
+function getArcgisJsApiVersion(folderPath) {
+  const envJsAsText = file.read(getEnvJsPath(folderPath));
   const envJs = babylon.parse(envJsAsText);
   const apiVersionIndex = envJs.tokens.findIndex(function(token) {
     if (token.value === "apiVersion") {
@@ -73,6 +59,10 @@ function getArcgisJsApiVersion() {
   const apiVersion = envJs.tokens[apiVersionIndex + 2].value;
   console.log("Arcgis JS Api version found in env.js: " + apiVersion);
   return apiVersion;
+}
+
+function getEnvJsPath(folderPath) {
+  return path.join(folderPath, "env.js");
 }
 
 function getDependenciesForApi(apiVersion) {
@@ -116,10 +106,6 @@ function defineDojoConfig() {
         location: path.join(paths.buildSrc, "dojo")
       },
       {
-        name: "pmm",
-        location: path.join(paths.buildSrc, "widgets/pmm")
-      },
-      {
         name: "build",
         location: path.join(paths.buildSrc, "util/build")
       }
@@ -148,45 +134,72 @@ function execute(command, where) {
   execSync(command, execArgs);
 }
 
-function createZipFile() {
-  return new Promise((resolve, reject) => {
-    try {
-      const zip = new AdmZip();
-      zip.addLocalFolder(paths.appOutput);
-      zip.writeZip(paths.outputZip);
-      console.log("########## BUILD END TIME: " + new Date() + " ##########");
-      resolve({
-        outputPath: paths.appOutput,
-        outputZipPath: paths.outputZip
-      });
-    } catch (err) {
-      console.log("Oh no! There was an error zipping the final build.", err);
-      reject(err);
-    }
-  });
+function copyBuiltAppTo(toPath) {
+  copyEnvJsAndReplaceApiUrl(paths.appRoot, toPath);
+  copyAppBuildPackagesToArcgisJsFolder(paths.appPackages, toPath);
+  copyAppBuildPackagesToOutputAppRoot(paths.appPackages, toPath);
+  copyUnbuiltFilesFrom(paths.appRoot, toPath);
 }
 
-function copyBuiltAppToAppOutput() {
-  console.log("Copying built app to " + paths.appOutput);
-  createDirectory(paths.appOutput);
-  createDirectory(paths.appOutputJimuJs);
-  createDirectory(paths.appOutputArcgisJsApi);
-  utilscripts.copyPartAppSrc(paths.appRoot, paths.appOutput);
-  copyEnvJsAndReplaceApiUrl(paths.appOutput);
-  utilscripts.copyAppBuildPackages(paths.appPackages, paths.appOutput);
-  docopy(paths.appPackagesBuildReport, paths.appOutputBuildReport);
+function copyUnbuiltFilesFrom(fromPath, toPath) {
+  const filesFromAppRoot = [
+    "index.html",
+    "init.js",
+    "simpleLoader.js",
+    "web.config",
+    "images",
+    "config-readme.txt",
+    "readme.html",
+    "configs"
+  ];
+  copyFilesFromTo(filesFromAppRoot, fromPath, toPath);
 }
 
-function createDirectory(path) {
-  console.log("Creating  ", path);
-  fs.mkdirsSync(path);
+function copyAppBuildPackagesToArcgisJsFolder(fromPath, toPath) {
+  const builtFiles = [
+    "dgrid/css",
+    "dijit/icons",
+    "dijit/themes/claro/claro.css",
+    "dijit/themes/claro",
+    "dojo/resources",
+    "dojo/dojo.js",
+    "dojo/nls",
+    "dojox/gfx/svg.js",
+    "dojox/grid/resources",
+    "dojox/layout/resources",
+    "dojox/layout/resources/ResizeHandle.css",
+    "esri/css",
+    "esri/dijit",
+    "esri/images",
+    "esri/main.js",
+    "esri/layers/VectorTileLayerImpl.js",
+    "esri/layers/vectorTiles",
+    // "esri/layers/nls",      // wont work in api version 3.20
+    "dojox/widget/ColorPicker" //needed by draw widget
+  ];
+  let toArcgisJsPath = path.join(toPath, "arcgis-js-api");
+  copyFilesFromTo(builtFiles, fromPath, toArcgisJsPath);
 }
 
-function copyEnvJsAndReplaceApiUrl(to) {
+function copyAppBuildPackagesToOutputAppRoot(fromPath, toPath) {
+  const builtFiles = [
+    ["jimu", "jimu.js"], //[ originName, destName ]
+    "themes",
+    "widgets",
+    "libs",
+    "dynamic-modules",
+    "predefined-apps/default/config.json", //missing in some api versions, thus tryCopy.
+    "config.json",
+    "build-report.txt" //generated by dojo build process
+  ];
+  copyFilesFromTo(builtFiles, fromPath, toPath);
+}
+
+function copyEnvJsAndReplaceApiUrl(from, to) {
   var newApiUrl = "./arcgis-js-api";
   var oldApiRegEx = /(https:)?\/\/js.arcgis.com\/\d\.\d{1,2}/i;
-  var fileContent = file.read(paths.envJsFile);
+  var fileContent = file.read(getEnvJsPath(from));
   fileContent = fileContent.replace(oldApiRegEx, newApiUrl);
-  let toPath = path.join(to, "env.js");
+  let toPath = getEnvJsPath(to);
   file.write(fileContent, toPath);
 }
