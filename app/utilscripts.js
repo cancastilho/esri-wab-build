@@ -1,7 +1,7 @@
-var path = require("path");
-var fs = require("fs");
-var requirejs = require("requirejs");
-var fse = require("fs-extra");
+const path = require("path");
+const fs = require("fs");
+const requirejs = require("requirejs");
+const fse = require("fs-extra");
 const file = require("./file");
 
 exports.writeWidgetResourceModule = writeWidgetResourceModule;
@@ -13,7 +13,7 @@ exports.getAmdFolderFromUri = getAmdFolderFromUri;
 exports.docopy = docopy;
 exports.dodelete = dodelete;
 exports.findDuplicatedModules = findDuplicatedModules;
-exports.cleanApp = cleanApp;
+exports.cleanFilesInBuildOutput = cleanFilesInBuildOutput;
 exports.cleanFilesInAppSource = cleanFilesInAppSource;
 exports.cleanUncompressedSource = cleanUncompressedSource;
 
@@ -21,12 +21,9 @@ exports.cleanUncompressedSource = cleanUncompressedSource;
 //widget: same format with app config
 function writeWidgetResourceModule(basePath, widget) {
   var modules = [];
-
   console.log("write widget [", widget.uri, "] resource.");
-
   widget.amdFolder = getAmdFolderFromUri(widget.uri);
   widget.basePath = basePath;
-
   if (getWidgetTemplateModule(widget)) {
     modules.push(getWidgetTemplateModule(widget));
   }
@@ -39,11 +36,9 @@ function writeWidgetResourceModule(basePath, widget) {
   if (getWidgetConfigModule(widget)) {
     modules.push(getWidgetConfigModule(widget));
   }
-
   var deps = modules.map(function(module) {
     return '"' + module + '"';
   });
-
   var str = "define([" + deps.join(",\n") + "], function(){});";
   let toPath = path.join(
     basePath,
@@ -421,7 +416,7 @@ function docopy(s, d, check, filterFunc) {
 
 function dodelete(f) {
   if (fs.existsSync(f)) {
-    console.log("delete", f);
+    // console.log("delete", f);
     fse.removeSync(f);
   }
 }
@@ -429,18 +424,25 @@ function dodelete(f) {
 //visit all of the folder's file and its sub-folders.
 //if callback function return true, stop visit.
 function visitFolderFiles(folderPath, cb) {
-  var files = fs.readdirSync(folderPath);
-  files.forEach(function(fileName) {
-    var filePath = path.normalize(folderPath + "/" + fileName);
-
-    if (fs.statSync(filePath).isDirectory()) {
-      if (!cb(filePath, fileName, true)) {
-        visitFolderFiles(filePath, cb);
+  let allPaths = createPaths(folderPath);
+  while (allPaths.length > 0) {
+    let currentPath = allPaths.pop();
+    if (file.isDirectory(currentPath)) {
+      let currentFolderName = path.basename(currentPath);
+      if (!cb(currentPath, currentFolderName)) {
+        let moreFilePaths = createPaths(currentPath);
+        allPaths = allPaths.concat(moreFilePaths);
       }
     } else {
-      cb(filePath, fileName, false);
+      let currentFileName = path.basename(currentPath);
+      cb(currentPath, currentFileName);
     }
-  });
+  }
+}
+
+function createPaths(folderPath) {
+  let fileNames = fs.readdirSync(folderPath);
+  return fileNames.map(filename => path.join(folderPath, filename));
 }
 
 function findDuplicatedModules(buildReportFile) {
@@ -527,74 +529,73 @@ function findDuplicatedModules(buildReportFile) {
   return duplicatedModules;
 }
 
-//clean files in the built output
-function cleanApp(appPath) {
-  //clean NLS files
-  removeNlsSource(path.join(appPath, "dynamic-modules/nls"));
-  cleanJimu();
-  fs.readdirSync(path.join(appPath, "themes")).forEach(function(themeName) {
-    removeNlsSource(path.join(appPath, "themes", themeName, "nls"));
-    dodelete(path.join(appPath, "themes", themeName, "nls/strings.js"));
-
-    var themeWidgetsPath = path.join(appPath, "themes", themeName, "widgets");
+function cleanFilesInBuildOutput(appOutput) {
+  removeNlsSource(path.join(appOutput, "dynamic-modules/nls"));
+  //cleanJimu(appOutput);
+  fs.readdirSync(path.join(appOutput, "themes")).forEach(function(themeName) {
+    removeNlsSource(path.join(appOutput, "themes", themeName, "nls"));
+    dodelete(path.join(appOutput, "themes", themeName, "nls/strings.js"));
+    var themeWidgetsPath = path.join(appOutput, "themes", themeName, "widgets");
     if (fs.existsSync(themeWidgetsPath)) {
       removeWidgetsNls(themeWidgetsPath);
     }
   });
+  removeWidgetsNls(path.join(appOutput, "widgets"));
+  cleanBuildeGeneratedFiles(appOutput);
+}
 
-  removeWidgetsNls(path.join(appPath, "widgets"));
-
-  //clean _build-generate_ files
-  cleanBuildeGeneratedFiles(appPath);
-
-  function removeWidgetsNls(widgetsPath) {
-    fs.readdirSync(widgetsPath).forEach(function(widgetName) {
-      removeNlsSource(path.join(widgetsPath, widgetName, "nls"));
-      removeNlsSource(path.join(widgetsPath, widgetName, "setting/nls"));
-      dodelete(path.join(widgetsPath, widgetName, "Widget.html"));
-      dodelete(path.join(widgetsPath, widgetName, "manifest.json"));
-      dodelete(path.join(widgetsPath, widgetName, "css/style.css"));
-      dodelete(path.join(widgetsPath, widgetName, "nls/strings.js"));
-      dodelete(path.join(widgetsPath, widgetName, "setting/Setting.html"));
-      dodelete(path.join(widgetsPath, widgetName, "setting/css/style.css"));
-      dodelete(path.join(widgetsPath, widgetName, "setting/nls/strings.js"));
+function removeWidgetsNls(widgetsPath) {
+  fs.readdirSync(widgetsPath).forEach(function(widgetName) {
+    let pathToWidget = path.join(widgetsPath, widgetName);
+    removeNlsSource(path.join(pathToWidget, "nls"));
+    removeNlsSource(path.join(pathToWidget, "setting/nls"));
+    let widgetFiles = [
+      "Widget.html",
+      "manifest.json",
+      "css/style.css",
+      "nls/strings.js",
+      "setting/Setting.html",
+      "setting/css/style.css",
+      "setting/nls/strings.js"
+    ];
+    widgetFiles.forEach(widgetFile => {
+      dodelete(path.join(pathToWidget, widgetFile));
     });
-  }
+  });
+}
 
-  function cleanJimu() {
-    removeNlsSource(path.join(appPath, "jimu.js/nls"));
-
-    //remove dijit
-    fs.readdirSync(path.join(appPath, "jimu.js/dijit")).forEach(function(file) {
-      var filePath = path.join(appPath, "jimu.js/dijit", file);
-      if (file !== "SymbolsInfo") {
-        dodelete(filePath);
-      }
-    });
-
-    dodelete(path.join(appPath, "jimu.js/LayerInfos"));
-
-    //remove framework files
-    fs.readdirSync(path.join(appPath, "jimu.js")).forEach(function(file) {
-      var filePath = path.join(appPath, "jimu.js", file);
-      if (
-        fs.statSync(filePath).isFile() &&
-        file !== "main.js" &&
-        file !== "oauth-callback.html"
-      ) {
-        dodelete(filePath);
-      }
-    });
-  }
+function cleanJimu(appOutput) {
+  removeNlsSource(path.join(appOutput, "jimu.js/nls"));
+  //remove dijit
+  fs.readdirSync(path.join(appOutput, "jimu.js/dijit")).forEach(function(
+    fileName
+  ) {
+    var filePath = path.join(appOutput, "jimu.js/dijit", fileName);
+    if (fileName !== "SymbolsInfo") {
+      dodelete(filePath);
+    }
+  });
+  dodelete(path.join(appOutput, "jimu.js/LayerInfos"));
+  //remove framework files
+  fs.readdirSync(path.join(appOutput, "jimu.js")).forEach(function(fileName) {
+    var filePath = path.join(appOutput, "jimu.js", fileName);
+    if (
+      file.isFile(filePath) &&
+      fileName !== "main.js" &&
+      fileName !== "oauth-callback.html"
+    ) {
+      dodelete(filePath);
+    }
+  });
 }
 
 function removeNlsSource(folderPath) {
   if (!fs.existsSync(folderPath)) {
     return;
   }
-  fs.readdirSync(folderPath).forEach(function(file) {
-    var filePath = path.join(folderPath, file);
-    if (fs.statSync(filePath).isDirectory()) {
+  fs.readdirSync(folderPath).forEach(function(fileName) {
+    var filePath = path.join(folderPath, fileName);
+    if (file.isDirectory(filePath)) {
       dodelete(filePath);
     }
   });
@@ -608,21 +609,28 @@ function cleanFilesInAppSource(appPath) {
 }
 
 function cleanBuildeGeneratedFiles(path) {
+  console.log(`Removing _build-generate_ files in ${path}`);
   //clean _build-generate_ files
   visitFolderFiles(path, function(filePath, fileName) {
-    if (fs.statSync(filePath).isFile() && /^_build-generate_/.test(fileName)) {
+    if (isBuildGeneratedFile(filePath, fileName)) {
       dodelete(filePath);
     }
   });
 }
 
+function isBuildGeneratedFile(filePath, fileName) {
+  return file.isFile(filePath) && /^_build-generate_/.test(fileName);
+}
+
 function cleanUncompressedSource(path) {
+  console.log(`Removing uncompressed.js files in ${path}`);
   visitFolderFiles(path, function(filePath) {
-    if (
-      !fs.statSync(filePath).isDirectory() &&
-      /.uncompressed.js$/.test(filePath)
-    ) {
+    if (isUncompressedFile(filePath)) {
       dodelete(filePath);
     }
   });
+}
+
+function isUncompressedFile(filePath) {
+  return !file.isDirectory(filePath) && /.uncompressed.js$/.test(filePath);
 }

@@ -95,11 +95,8 @@ profile = {
         [".", ".", /(\/\.)|(~$)|(tests)/]
       ],
       resourceTags: {
-        copyOnly: function(filename, mid) {
-          return /LandView/.test(mid);
-        },
         amd: function(filename, mid) {
-          return !/LandView/.test(mid) && /\.js$/.test(filename);
+          return /\.js$/.test(filename);
         }
       }
     },

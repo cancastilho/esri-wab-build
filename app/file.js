@@ -15,6 +15,8 @@ exports.tryCopy = tryCopy;
 exports.createZipFromTo = createZipFromTo;
 exports.createOrCleanDirectory = createOrCleanDirectory;
 exports.remove = remove;
+exports.isDirectory = isDirectory;
+exports.isFile = isFile;
 
 function read(pathToFile) {
   return fs.readFileSync(pathToFile, encoding);
@@ -82,4 +84,12 @@ function createOrCleanDirectory(pathToDirectory) {
 function remove(path) {
   //TODO: Inline method
   utilscripts.dodelete(path);
+}
+
+function isDirectory(path) {
+  return fs.statSync(path).isDirectory();
+}
+
+function isFile(path) {
+  return fs.statSync(path).isFile();
 }

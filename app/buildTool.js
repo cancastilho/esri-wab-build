@@ -14,7 +14,7 @@ function build(buildPath) {
   let startTime = new Date();
   console.log(`########## BUILD START TIME: ${startTime} ##########`);
   file.createOrCleanDirectory(paths.buildSrc);
-  copyFromAppRootToBuildSrc();
+  copyFilesToBuildFromTo(paths.appRoot, paths.buildSrc);
   installDependenciesInBuildSrc(getBowerDependencies());
   file.createOrCleanDirectory(paths.buildOutput);
   preparebuild.generateAppProfileFile();
@@ -24,13 +24,16 @@ function build(buildPath) {
   utilscripts.cleanUncompressedSource(paths.appPackages);
   file.createOrCleanDirectory(paths.appOutput);
   copyBuiltAppTo(paths.appOutput);
-  utilscripts.cleanApp(paths.appOutput);
-  utilscripts.cleanFilesInAppSource(paths.appRoot);
+  utilscripts.cleanFilesInBuildOutput(paths.appOutput);
+  utilscripts.cleanFilesInAppSource(paths.buildSrc);
+
+  //Some files just dont build right.
+  copyUnbuiltFilesFromTo(paths.appRoot, paths.appOutput);
   file.remove(paths.appPackages);
   console.log("########## BUILD END TIME: " + new Date() + " ##########");
 }
 
-function copyFromAppRootToBuildSrc() {
+function copyFilesToBuildFromTo(fromPath, toPath) {
   const filesAndDirectories = [
     "jimu.js",
     "themes",
@@ -39,7 +42,7 @@ function copyFromAppRootToBuildSrc() {
     "config.json",
     "widgets"
   ];
-  copyFilesFromTo(filesAndDirectories, paths.appRoot, paths.buildSrc);
+  copyFilesFromTo(filesAndDirectories, fromPath, toPath);
 }
 
 function getBowerDependencies() {
@@ -138,10 +141,9 @@ function copyBuiltAppTo(toPath) {
   copyEnvJsAndReplaceApiUrl(paths.appRoot, toPath);
   copyAppBuildPackagesToArcgisJsFolder(paths.appPackages, toPath);
   copyAppBuildPackagesToOutputAppRoot(paths.appPackages, toPath);
-  copyUnbuiltFilesFrom(paths.appRoot, toPath);
 }
 
-function copyUnbuiltFilesFrom(fromPath, toPath) {
+function copyUnbuiltFilesFromTo(fromPath, toPath) {
   const filesFromAppRoot = [
     "index.html",
     "init.js",
@@ -151,6 +153,11 @@ function copyUnbuiltFilesFrom(fromPath, toPath) {
     "config-readme.txt",
     "readme.html",
     "configs"
+
+    //,"index2.html",
+    //"widgets/TelaInicial",
+    //"widgets/LandView",
+    //"package.json"
   ];
   copyFilesFromTo(filesFromAppRoot, fromPath, toPath);
 }

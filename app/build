@@ -6,6 +6,7 @@ const file = require('./file');
 const paths = require('./paths');
 const args = require('process').argv;
 
+//TODO use commander.js to parse options.
 if (args.length > 2) {
     const buildPath = args[2];
     remoteBuild.buildApp(buildPath);
@@ -13,4 +14,5 @@ if (args.length > 2) {
     buildTool.build();
 }
 
+//TODO make zip optional
 file.createZipFromTo(paths.appOutput, paths.outputZip);

@@ -1,6 +1,6 @@
 var utilscripts = require("./utilscripts");
 var path = require("path");
-var fs = require("fs");
+var file = require("./file");
 
 /*global __dirname */
 var basePath = path.join(__dirname, "..");
@@ -16,9 +16,9 @@ if (str) {
   console.log(
     "build has duplicated modules. Please see report here: buildOutput/app-packages/duplicate-modules.txt"
   );
-  fs.writeFileSync(
-    path.join(basePath, "buildOutput/app-packages/duplicate-modules.txt"),
-    str,
-    "utf-8"
+  let toPath = path.join(
+    basePath,
+    "buildOutput/app-packages/duplicate-modules.txt"
   );
+  file.write(str, toPath);
 }
