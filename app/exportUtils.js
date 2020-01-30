@@ -24,13 +24,8 @@ exports.exportApp = function(/*String*/ serverDir) {
   this._cleanDist();
   const tempDir = this._copyApp(serverDir);
 
-  const envFileContents = fs.readFileSync(path.join(tempDir, "env.js"), {
-    encoding: "utf-8"
-  });
-  const configFileContents = fs.readFileSync(
-    path.join(tempDir, "config.json"),
-    { encoding: "utf-8" }
-  );
+  const envFileContents = file.read(path.join(tempDir, "env.js"));
+  const configFileContents = file.read(path.join(tempDir, "config.json"));
 
   const newEnvFile = this._replaceApiPath(envFileContents);
   const newConfigFileObj = this._replaceProxyConfig(
@@ -55,7 +50,7 @@ exports.exportApp = function(/*String*/ serverDir) {
 exports._cleanDist = function() {
   const distDir = path.join(process.cwd(), "dist");
 
-  if (fs.existsSync(distDir)) {
+  if (file.exists(distDir)) {
     console.log("Cleaning dist directory...");
     file.remove(distDir);
   }
@@ -78,7 +73,7 @@ exports._cleanDist = function() {
 exports._copyApp = function(/*String*/ serverDir) {
   const distDir = path.join(process.cwd(), "dist");
 
-  fs.copySync(serverDir, distDir);
+  file.copy(serverDir, distDir);
 
   return distDir;
 };

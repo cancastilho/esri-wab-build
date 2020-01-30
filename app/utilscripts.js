@@ -1,5 +1,4 @@
 const path = require("path");
-const fs = require("fs");
 const requirejs = require("requirejs");
 const file = require("./file");
 
@@ -31,7 +30,7 @@ function writeWidgetResourceModule(basePath, widget) {
 }
 
 function createModuleContent(modules) {
-  var deps = modules.map(function (module) {
+  var deps = modules.map(function(module) {
     return '"' + module + '"';
   });
   let dependencies = deps.join(",\n");
@@ -49,7 +48,7 @@ function getWidgetModules(widget) {
     ["config.json", "dojo/text!./config.json"],
     [`../${widget.config}`, `dojo/text!${widget.config}`] //alternative path
   ];
-  possibleModules.forEach(function (partes) {
+  possibleModules.forEach(function(partes) {
     let moduleName = partes[0];
     let pathToModule = path.join(widget.basePath, widget.amdFolder, moduleName);
     if (file.exists(pathToModule)) {
@@ -87,16 +86,14 @@ function getThemeNameFrom(options) {
 }
 
 function getThemePanelModules(basePath, options) {
-  var modules = [],
-    appConfig,
-    themeName;
+  var modules = [];
   if (typeof options === "object") {
-    appConfig = options;
+    let appConfig = options;
     if (appConfig.widgetOnScreen.panel && appConfig.widgetOnScreen.panel.uri) {
       modules.push(
         "./panels/" +
-        getNameFromUri(appConfig.widgetOnScreen.panel.uri) +
-        "/Panel"
+          getNameFromUri(appConfig.widgetOnScreen.panel.uri) +
+          "/Panel"
       );
     }
     if (appConfig.widgetPool.panel && appConfig.widgetPool.panel.uri) {
@@ -105,46 +102,33 @@ function getThemePanelModules(basePath, options) {
       );
     }
 
-    visitElement(appConfig, function (e) {
+    visitElement(appConfig, function(e) {
       if (e.widgets && e.panel && e.panel.uri) {
         modules.push("./panels/" + getNameFromUri(e.panel.uri) + "/Panel");
       }
     });
   } else {
-    themeName = options;
+    let themeName = options;
     if (file.exists(path.join(basePath, themeName, "panels"))) {
-      fs.readdirSync(path.join(basePath, themeName, "panels")).forEach(function (
-        panelName
-      ) {
-        modules.push("./panels/" + panelName + "/Panel");
-      });
+      file
+        .readDirectory(path.join(basePath, themeName, "panels"))
+        .forEach(function(panelName) {
+          modules.push("./panels/" + panelName + "/Panel");
+        });
     }
   }
   return modules;
 }
 
 function getThemeStyleModules(basePath, options) {
-  let appConfig;
-  let themeName;
-  let commonCssFile
-  let defaultStyleFileName;
-
-  if (typeof options === "object") {
-    appConfig = options;
-    themeName = appConfig.theme.name;
-  } else {
-    themeName = options;
-  }
-  commonCssFile = path.join(basePath, "themes", themeName, "common.css");
-  if (appConfig) {
-    defaultStyleFileName =
-      appConfig.theme.styles && appConfig.theme.styles[0]
-        ? appConfig.theme.styles && appConfig.theme.styles[0]
-        : "default";
-  } else {
-    defaultStyleFileName = "default";
+  let modules = [];
+  let themeName = getThemeNameFrom(options);
+  let commonCssFile = path.join(basePath, "themes", themeName, "common.css");
+  if (file.exists(commonCssFile)) {
+    modules.push("dojo/text!./common.css");
   }
 
+  let defaultStyleFileName = getDefaultStyleFileName(options);
   var defaultStyleFile = path.join(
     basePath,
     "themes",
@@ -153,36 +137,36 @@ function getThemeStyleModules(basePath, options) {
     defaultStyleFileName,
     "style.css"
   );
-
-  let modules = [];
-  if (file.exists(commonCssFile)) {
-    modules.push("dojo/text!./common.css");
-  }
   if (file.exists(defaultStyleFile)) {
     modules.push("dojo/text!./styles/" + defaultStyleFileName + "/style.css");
   }
   return modules;
 }
 
+function getDefaultStyleFileName(options) {
+  let defaultStyleFileName = "default";
+  if (typeof options === "object") {
+    let appConfig = options;
+    defaultStyleFileName =
+      appConfig.theme.styles && appConfig.theme.styles[0]
+        ? appConfig.theme.styles && appConfig.theme.styles[0]
+        : "default";
+  }
+  return defaultStyleFileName;
+}
+
 function getThemeNlsModule(basePath, options) {
   let modules = [];
-  let appConfig;
-  let themeName;
-
-  if (typeof options === "object") {
-    appConfig = options;
-    themeName = appConfig.theme.name;
-  } else {
-    themeName = options;
+  let themeName = getThemeNameFrom(options);
+  let nlsStringsPath = path.join(
+    basePath,
+    "themes",
+    themeName,
+    "nls/strings.js"
+  );
+  if (file.exists(nlsStringsPath)) {
+    modules.push("dojo/i18n!./nls/strings");
   }
-
-  var str;
-  if (
-    file.exists(path.join(basePath, "themes", themeName, "nls/strings.js"))
-  ) {
-    str = "dojo/i18n!./nls/strings";
-  }
-  modules.push(str);
   return modules;
 }
 
@@ -192,7 +176,7 @@ function addI18NFeatureActionsLabel(manifest) {
   }
   // get feature actions
   var featureActions = manifest.featureActions;
-  featureActions.forEach(function (featureAction) {
+  featureActions.forEach(function(featureAction) {
     manifest["i18nLabels_featureAction_" + featureAction.name] = {};
     //theme or widget label
     var key = "_featureAction_" + featureAction.name;
@@ -207,9 +191,7 @@ function addI18NFeatureActionsLabel(manifest) {
       if (p === "root" || !defaultStrings[p]) {
         continue;
       }
-      if (
-        !file.exists(path.join(manifest.location, "nls", p, "strings.js"))
-      ) {
+      if (!file.exists(path.join(manifest.location, "nls", p, "strings.js"))) {
         continue;
       }
 
@@ -240,7 +222,7 @@ function addI18NLabel(manifest) {
     //theme's layout and style label
     if (manifest.category === "theme") {
       if (manifest.layouts) {
-        manifest.layouts.forEach(function (layout) {
+        manifest.layouts.forEach(function(layout) {
           manifest["i18nLabels_layout_" + layout.name] = {};
           manifest["i18nLabels_layout_" + layout.name].defaultLabel =
             defaultStrings.root["_layout_" + layout.name];
@@ -248,7 +230,7 @@ function addI18NLabel(manifest) {
       }
 
       if (manifest.styles) {
-        manifest.styles.forEach(function (style) {
+        manifest.styles.forEach(function(style) {
           manifest["i18nLabels_style_" + style.name] = {};
           manifest["i18nLabels_style_" + style.name].defaultLabel =
             defaultStrings.root["_style_" + style.name];
@@ -274,14 +256,14 @@ function addI18NLabel(manifest) {
     //theme's layout and style label
     if (manifest.category === "theme") {
       if (manifest.layouts) {
-        manifest.layouts.forEach(function (layout) {
+        manifest.layouts.forEach(function(layout) {
           manifest["i18nLabels_layout_" + layout.name][p] =
             localeStrings["_layout_" + layout.name];
         });
       }
 
       if (manifest.styles) {
-        manifest.styles.forEach(function (style) {
+        manifest.styles.forEach(function(style) {
           manifest["i18nLabels_style_" + style.name][p] =
             localeStrings["_style_" + style.name];
         });
@@ -302,46 +284,33 @@ function getAmdFolderFromUri(uri) {
   return segs.join("/");
 }
 
-function visitElement(config, cb) {
-  visitBigSection("widgetOnScreen", cb);
-  visitBigSection("widgetPool", cb);
+function visitElement(appConfig, cb) {
+  visitBigSection(appConfig, "widgetOnScreen", cb);
+  visitBigSection(appConfig, "widgetPool", cb);
+}
 
-  function visitBigSection(section, cb) {
-    var i, j, isThemeWidget;
-    if (config[section]) {
-      if (config[section].groups) {
-        for (i = 0; i < config[section].groups.length; i++) {
-          cb(config[section].groups[i], i, false, section === "widgetOnScreen");
-          for (j = 0; j < config[section].groups[i].widgets.length; j++) {
-            isThemeWidget =
-              config[section].groups[i].widgets[j].uri &&
-              config[section].groups[i].widgets[j].uri.indexOf(
-                "themes/" + config.theme.name
-              ) > -1;
-            cb(
-              config[section].groups[i].widgets[j],
-              j,
-              isThemeWidget,
-              section === "widgetOnScreen"
-            );
-          }
+function visitBigSection(appConfig, section, cb) {
+  if (appConfig[section]) {
+    var groups = appConfig[section].groups;
+    if (groups) {
+      for (var i = 0; i < groups.length; i++) {
+        cb(groups[i], i, false, section === "widgetOnScreen");
+        let widgets = groups[i].widgets;
+        for (var j = 0; j < widgets.length; j++) {
+          let isThemeWidget =
+            widgets[j].uri &&
+            widgets[j].uri.indexOf("themes/" + appConfig.theme.name) > -1;
+          cb(widgets[j], j, isThemeWidget, section === "widgetOnScreen");
         }
       }
-
-      if (config[section].widgets) {
-        for (i = 0; i < config[section].widgets.length; i++) {
-          isThemeWidget =
-            config[section].widgets[i].uri &&
-            config[section].widgets[i].uri.indexOf(
-              "themes/" + config.theme.name
-            ) > -1;
-          cb(
-            config[section].widgets[i],
-            i,
-            isThemeWidget,
-            section === "widgetOnScreen"
-          );
-        }
+    }
+    let widgets = appConfig[section].widgets;
+    if (widgets) {
+      for (var i = 0; i < widgets.length; i++) {
+        let isThemeWidget =
+          widgets[i].uri &&
+          widgets[i].uri.indexOf("themes/" + appConfig.theme.name) > -1;
+        cb(widgets[i], i, isThemeWidget, section === "widgetOnScreen");
       }
     }
   }
@@ -366,25 +335,28 @@ function visitFolderFiles(folderPath, callback) {
   let allPaths = createPaths(folderPath);
   while (allPaths.length > 0) {
     let currentPath = allPaths.pop();
-    let currentFileName = path.basename(currentPath);
-    let stop = callback(currentPath, currentFileName);
     if (file.isDirectory(currentPath)) {
+      let currentFileName = "";
+      let stop = callback(currentPath, currentFileName);
       if (!stop) {
         let moreFilePaths = createPaths(currentPath);
         allPaths = allPaths.concat(moreFilePaths);
       }
+    } else {
+      let currentFileName = path.basename(currentPath);
+      callback(currentPath, currentFileName);
     }
   }
 }
 
 function createPaths(folderPath) {
-  let fileNames = fs.readdirSync(folderPath);
+  let fileNames = file.readDirectory(folderPath);
   return fileNames.map(filename => path.join(folderPath, filename));
 }
 
 function findDuplicatedModules(buildReportFile) {
   var modules = {};
-  var report = fs.readFileSync(buildReportFile, "utf-8");
+  var report = file.read(buildReportFile);
   var splitor;
   if (report.indexOf("\r\n") > -1) {
     splitor = "\r\n";
@@ -447,7 +419,7 @@ function findDuplicatedModules(buildReportFile) {
       "xstyle/main:"
     ];
 
-    [].concat(ignoreLayers, discardLayers).forEach(function (layer) {
+    [].concat(ignoreLayers, discardLayers).forEach(function(layer) {
       var i = layers.indexOf(layer);
       if (i > -1) {
         layers.splice(i, 1);
@@ -469,20 +441,27 @@ function findDuplicatedModules(buildReportFile) {
 function cleanFilesInBuildOutput(appOutput) {
   removeNlsSource(path.join(appOutput, "dynamic-modules/nls"));
   //cleanJimu(appOutput);
-  fs.readdirSync(path.join(appOutput, "themes")).forEach(function (themeName) {
-    removeNlsSource(path.join(appOutput, "themes", themeName, "nls"));
-    file.remove(path.join(appOutput, "themes", themeName, "nls/strings.js"));
-    var themeWidgetsPath = path.join(appOutput, "themes", themeName, "widgets");
-    if (file.exists(themeWidgetsPath)) {
-      removeWidgetsNls(themeWidgetsPath);
-    }
-  });
+  file
+    .readDirectory(path.join(appOutput, "themes"))
+    .forEach(function(themeName) {
+      removeNlsSource(path.join(appOutput, "themes", themeName, "nls"));
+      file.remove(path.join(appOutput, "themes", themeName, "nls/strings.js"));
+      var themeWidgetsPath = path.join(
+        appOutput,
+        "themes",
+        themeName,
+        "widgets"
+      );
+      if (file.exists(themeWidgetsPath)) {
+        removeWidgetsNls(themeWidgetsPath);
+      }
+    });
   removeWidgetsNls(path.join(appOutput, "widgets"));
   cleanBuildeGeneratedFiles(appOutput);
 }
 
 function removeWidgetsNls(widgetsPath) {
-  fs.readdirSync(widgetsPath).forEach(function (widgetName) {
+  file.readDirectory(widgetsPath).forEach(function(widgetName) {
     let pathToWidget = path.join(widgetsPath, widgetName);
     removeNlsSource(path.join(pathToWidget, "nls"));
     removeNlsSource(path.join(pathToWidget, "setting/nls"));
@@ -504,33 +483,35 @@ function removeWidgetsNls(widgetsPath) {
 function cleanJimu(appOutput) {
   removeNlsSource(path.join(appOutput, "jimu.js/nls"));
   //remove dijit
-  fs.readdirSync(path.join(appOutput, "jimu.js/dijit")).forEach(function (
-    fileName
-  ) {
-    var filePath = path.join(appOutput, "jimu.js/dijit", fileName);
-    if (fileName !== "SymbolsInfo") {
-      file.remove(filePath);
-    }
-  });
+  file
+    .readDirectory(path.join(appOutput, "jimu.js/dijit"))
+    .forEach(function(fileName) {
+      var filePath = path.join(appOutput, "jimu.js/dijit", fileName);
+      if (fileName !== "SymbolsInfo") {
+        file.remove(filePath);
+      }
+    });
   file.remove(path.join(appOutput, "jimu.js/LayerInfos"));
   //remove framework files
-  fs.readdirSync(path.join(appOutput, "jimu.js")).forEach(function (fileName) {
-    var filePath = path.join(appOutput, "jimu.js", fileName);
-    if (
-      file.isFile(filePath) &&
-      fileName !== "main.js" &&
-      fileName !== "oauth-callback.html"
-    ) {
-      file.remove(filePath);
-    }
-  });
+  file
+    .readDirectory(path.join(appOutput, "jimu.js"))
+    .forEach(function(fileName) {
+      var filePath = path.join(appOutput, "jimu.js", fileName);
+      if (
+        file.isFile(filePath) &&
+        fileName !== "main.js" &&
+        fileName !== "oauth-callback.html"
+      ) {
+        file.remove(filePath);
+      }
+    });
 }
 
 function removeNlsSource(folderPath) {
   if (!file.exists(folderPath)) {
     return;
   }
-  fs.readdirSync(folderPath).forEach(function (fileName) {
+  file.readDirectory(folderPath).forEach(function(fileName) {
     var filePath = path.join(folderPath, fileName);
     if (file.isDirectory(filePath)) {
       file.remove(filePath);
@@ -548,7 +529,7 @@ function cleanFilesInAppSource(appPath) {
 function cleanBuildeGeneratedFiles(path) {
   console.log(`Removing _build-generate_ files in ${path}`);
   //clean _build-generate_ files
-  visitFolderFiles(path, function (filePath, fileName) {
+  visitFolderFiles(path, function(filePath, fileName) {
     if (isBuildGeneratedFile(filePath, fileName)) {
       file.remove(filePath);
     }
@@ -561,7 +542,7 @@ function isBuildGeneratedFile(filePath, fileName) {
 
 function cleanUncompressedSource(path) {
   console.log(`Removing uncompressed.js files in ${path}`);
-  visitFolderFiles(path, function (filePath) {
+  visitFolderFiles(path, function(filePath) {
     if (isUncompressedFile(filePath)) {
       file.remove(filePath);
     }
@@ -569,5 +550,5 @@ function cleanUncompressedSource(path) {
 }
 
 function isUncompressedFile(filePath) {
-  return !file.isDirectory(filePath) && /.uncompressed.js$/.test(filePath);
+  return file.isFile(filePath) && /.uncompressed.js$/.test(filePath);
 }

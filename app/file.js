@@ -1,7 +1,6 @@
 const fs = require("fs-extra");
 const AdmZip = require("adm-zip");
 const path = require("path");
-const utilscripts = require("./utilscripts");
 
 const encoding = "utf-8";
 
@@ -17,9 +16,14 @@ exports.createOrCleanDirectory = createOrCleanDirectory;
 exports.remove = remove;
 exports.isDirectory = isDirectory;
 exports.isFile = isFile;
+exports.readDirectory = readDirectory;
 
 function read(pathToFile) {
   return fs.readFileSync(pathToFile, encoding);
+}
+
+function readDirectory(pathToDir) {
+  return fs.readdirSync(pathToDir);
 }
 
 function write(content, pathToFile) {
@@ -42,7 +46,7 @@ function copyFilesFromTo(filesAndDirectories, fromPath, toPath) {
   console.log(`Copying many files from: ${fromPath}`);
   console.log(`To path:  ${toPath}`);
   console.log(filesAndDirectories.join("\n"));
-  filesAndDirectories.forEach(function (name) {
+  filesAndDirectories.forEach(function(name) {
     if (Array.isArray(name)) {
       const from = path.join(fromPath, name[0]);
       const to = path.join(toPath, name[1]);
@@ -57,12 +61,16 @@ function copyFilesFromTo(filesAndDirectories, fromPath, toPath) {
 
 function tryCopy(from, to) {
   try {
-    if (file.exists(from)) {
-      console.log("copy", from);
-      fs.copySync(from, to);
-    }
+    copy(from, to);
   } catch (error) {
     console.log(error);
+  }
+}
+
+function copy(from, to) {
+  if (exists(from)) {
+    console.log("copy", from);
+    fs.copySync(from, to);
   }
 }
 
@@ -84,7 +92,7 @@ function createOrCleanDirectory(pathToDirectory) {
 }
 
 function remove(path) {
-  if (file.exists(path)) {
+  if (exists(path)) {
     // console.log("delete", path);
     fs.removeSync(path);
   }
