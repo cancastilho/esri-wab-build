@@ -20,111 +20,73 @@ exports.cleanUncompressedSource = cleanUncompressedSource;
 //basePath: the widgets folder's parent folder
 //widget: same format with app config
 function writeWidgetResourceModule(basePath, widget) {
-  var modules = [];
   console.log("write widget [", widget.uri, "] resource.");
   widget.amdFolder = getAmdFolderFromUri(widget.uri);
   widget.basePath = basePath;
-  if (getWidgetTemplateModule(widget)) {
-    modules.push(getWidgetTemplateModule(widget));
-  }
-  if (getWidgetStyleModule(widget)) {
-    modules.push(getWidgetStyleModule(widget));
-  }
-  if (getWidgetNlsModule(widget)) {
-    modules.push(getWidgetNlsModule(widget));
-  }
-  if (getWidgetConfigModule(widget)) {
-    modules.push(getWidgetConfigModule(widget));
-  }
-  var deps = modules.map(function(module) {
-    return '"' + module + '"';
-  });
-  var str = "define([" + deps.join(",\n") + "], function(){});";
+  let modules = getWidgetModules(widget);
+  let content = createModuleContent(modules);
   let toPath = path.join(
     basePath,
-    getAmdFolderFromUri(widget.uri),
+    widget.amdFolder,
     "_build-generate_module.js"
   );
-  file.write(str, toPath);
+  file.write(content, toPath);
 }
 
-function getWidgetTemplateModule(widget) {
-  var str;
-  if (
-    fs.existsSync(path.join(widget.basePath, widget.amdFolder, "Widget.html"))
-  ) {
-    str = "dojo/text!./Widget.html";
-  }
-  return str;
+function createModuleContent(modules) {
+  var deps = modules.map(function (module) {
+    return '"' + module + '"';
+  });
+  let dependencies = deps.join(",\n");
+  content = `define([ ${dependencies} ], function(){});`;
+  return content;
 }
 
-function getWidgetStyleModule(widget) {
-  var str;
-  if (
-    fs.existsSync(path.join(widget.basePath, widget.amdFolder, "css/style.css"))
-  ) {
-    str = "dojo/text!./css/style.css";
-  }
-  return str;
-}
-
-function getWidgetNlsModule(widget) {
-  var str;
-  if (
-    fs.existsSync(
-      path.join(widget.basePath, widget.amdFolder, "nls/strings.js")
-    )
-  ) {
-    str = "dojo/i18n!./nls/strings";
-  }
-  return str;
-}
-
-function getWidgetConfigModule(widget) {
-  var str;
-  if (widget.config && typeof widget.config === "object") {
-    return;
-  } else if (
-    widget.config &&
-    fs.existsSync(path.join(widget.basePath, widget.config))
-  ) {
-    str = "dojo/text!" + widget.config;
-  } else if (
-    fs.existsSync(path.join(widget.basePath, widget.amdFolder, "config.json"))
-  ) {
-    str = "dojo/text!./config.json";
-  } else {
-    return;
-  }
-  return str;
+function getWidgetModules(widget) {
+  let modulesString = [];
+  let possibleModules = [
+    //moduleName, moduleString
+    ["Widget.html", "dojo/text!./Widget.html"],
+    ["css/style.css", "dojo/text!./css/style.css"],
+    ["nls/strings.js", "dojo/i18n!./nls/strings"],
+    ["config.json", "dojo/text!./config.json"],
+    [`../${widget.config}`, `dojo/text!${widget.config}`] //alternative path
+  ];
+  possibleModules.forEach(function (partes) {
+    let moduleName = partes[0];
+    let pathToModule = path.join(widget.basePath, widget.amdFolder, moduleName);
+    if (file.exists(pathToModule)) {
+      let moduleString = partes[1];
+      modulesString.push(moduleString);
+    }
+  });
+  return modulesString;
 }
 
 function writeThemeResourceModule(basePath, options) {
-  var modules = [].concat(
+  let modules = [].concat(
     getThemePanelModules(basePath, options),
     getThemeStyleModules(basePath, options),
     getThemeNlsModule(basePath, options)
   );
-
-  var deps = modules.map(function(module) {
-    return '"' + module + '"';
-  });
-
-  var str = "define([" + deps.join(",\n") + "], function(){});";
-
-  var themeName;
-  if (typeof options === "object") {
-    themeName = options.theme.name;
-  } else {
-    themeName = options;
-  }
+  let content = createModuleContent(modules);
+  let themeName = getThemeNameFrom(options);
   let toPath = path.join(
     basePath,
     "themes",
     themeName,
     "_build-generate_module.js"
   );
-  file.write(str, toPath);
+  file.write(content, toPath);
+}
+
+function getThemeNameFrom(options) {
+  if (typeof options === "object") {
+    themeName = options.theme.name;
+  } else {
+    themeName = options;
+  }
+  return themeName;
 }
 
 function getThemePanelModules(basePath, options) {
@@ -136,8 +98,8 @@ function getThemePanelModules(basePath, options) {
     if (appConfig.widgetOnScreen.panel && appConfig.widgetOnScreen.panel.uri) {
       modules.push(
         "./panels/" +
-          getNameFromUri(appConfig.widgetOnScreen.panel.uri) +
-          "/Panel"
+        getNameFromUri(appConfig.widgetOnScreen.panel.uri) +
+        "/Panel"
       );
     }
     if (appConfig.widgetPool.panel && appConfig.widgetPool.panel.uri) {
@@ -146,15 +108,15 @@ function getThemePanelModules(basePath, options) {
       );
     }
 
-    visitElement(appConfig, function(e) {
+    visitElement(appConfig, function (e) {
       if (e.widgets && e.panel && e.panel.uri) {
         modules.push("./panels/" + getNameFromUri(e.panel.uri) + "/Panel");
       }
     });
   } else {
     themeName = options;
-    if (fs.existsSync(path.join(basePath, themeName, "panels"))) {
-      fs.readdirSync(path.join(basePath, themeName, "panels")).forEach(function(
+    if (file.exists(path.join(basePath, themeName, "panels"))) {
+      fs.readdirSync(path.join(basePath, themeName, "panels")).forEach(function (
         panelName
       ) {
         modules.push("./panels/" + panelName + "/Panel");
@@ -165,11 +127,10 @@ function getThemePanelModules(basePath, options) {
 }
 
 function getThemeStyleModules(basePath, options) {
-  var modules = [],
-    appConfig,
-    themeName;
-
-  var commonCssFile, defaultStyleFileName;
+  let appConfig;
+  let themeName;
+  let commonCssFile
+  let defaultStyleFileName;
 
   if (typeof options === "object") {
     appConfig = options;
@@ -196,20 +157,20 @@ function getThemeStyleModules(basePath, options) {
     "style.css"
   );
 
-  if (fs.existsSync(commonCssFile)) {
+  let modules = [];
+  if (file.exists(commonCssFile)) {
     modules.push("dojo/text!./common.css");
   }
-
-  if (fs.existsSync(defaultStyleFile)) {
+  if (file.exists(defaultStyleFile)) {
     modules.push("dojo/text!./styles/" + defaultStyleFileName + "/style.css");
   }
   return modules;
 }
 
 function getThemeNlsModule(basePath, options) {
-  var modules = [],
-    appConfig,
-    themeName;
+  let modules = [];
+  let appConfig;
+  let themeName;
 
   if (typeof options === "object") {
     appConfig = options;
@@ -220,7 +181,7 @@ function getThemeNlsModule(basePath, options) {
 
   var str;
   if (
-    fs.existsSync(path.join(basePath, "themes", themeName, "nls/strings.js"))
+    file.exists(path.join(basePath, "themes", themeName, "nls/strings.js"))
   ) {
     str = "dojo/i18n!./nls/strings";
   }
@@ -229,12 +190,12 @@ function getThemeNlsModule(basePath, options) {
 }
 
 function addI18NFeatureActionsLabel(manifest) {
-  if (!fs.existsSync(path.join(manifest.location, "nls"))) {
+  if (!file.exists(path.join(manifest.location, "nls"))) {
     return;
   }
   // get feature actions
   var featureActions = manifest.featureActions;
-  featureActions.forEach(function(featureAction) {
+  featureActions.forEach(function (featureAction) {
     manifest["i18nLabels_featureAction_" + featureAction.name] = {};
     //theme or widget label
     var key = "_featureAction_" + featureAction.name;
@@ -250,7 +211,7 @@ function addI18NFeatureActionsLabel(manifest) {
         continue;
       }
       if (
-        !fs.existsSync(path.join(manifest.location, "nls", p, "strings.js"))
+        !file.exists(path.join(manifest.location, "nls", p, "strings.js"))
       ) {
         continue;
       }
@@ -268,7 +229,7 @@ function addI18NFeatureActionsLabel(manifest) {
 
 function addI18NLabel(manifest) {
   manifest.i18nLabels = {};
-  if (!fs.existsSync(path.join(manifest.location, "nls"))) {
+  if (!file.exists(path.join(manifest.location, "nls"))) {
     return;
   }
   //theme or widget label
@@ -282,7 +243,7 @@ function addI18NLabel(manifest) {
     //theme's layout and style label
     if (manifest.category === "theme") {
       if (manifest.layouts) {
-        manifest.layouts.forEach(function(layout) {
+        manifest.layouts.forEach(function (layout) {
           manifest["i18nLabels_layout_" + layout.name] = {};
           manifest["i18nLabels_layout_" + layout.name].defaultLabel =
             defaultStrings.root["_layout_" + layout.name];
@@ -290,7 +251,7 @@ function addI18NLabel(manifest) {
       }
 
       if (manifest.styles) {
-        manifest.styles.forEach(function(style) {
+        manifest.styles.forEach(function (style) {
           manifest["i18nLabels_style_" + style.name] = {};
           manifest["i18nLabels_style_" + style.name].defaultLabel =
             defaultStrings.root["_style_" + style.name];
@@ -302,7 +263,7 @@ function addI18NLabel(manifest) {
     if (p === "root" || !defaultStrings[p]) {
       continue;
     }
-    if (!fs.existsSync(path.join(manifest.location, "nls", p, "strings.js"))) {
+    if (!file.exists(path.join(manifest.location, "nls", p, "strings.js"))) {
       continue;
     }
 
@@ -316,14 +277,14 @@ function addI18NLabel(manifest) {
     //theme's layout and style label
     if (manifest.category === "theme") {
       if (manifest.layouts) {
-        manifest.layouts.forEach(function(layout) {
+        manifest.layouts.forEach(function (layout) {
           manifest["i18nLabels_layout_" + layout.name][p] =
             localeStrings["_layout_" + layout.name];
         });
       }
 
       if (manifest.styles) {
-        manifest.styles.forEach(function(style) {
+        manifest.styles.forEach(function (style) {
           manifest["i18nLabels_style_" + style.name][p] =
             localeStrings["_style_" + style.name];
         });
@@ -404,7 +365,7 @@ function copyImageTest(src, dest) {
 
 function docopy(s, d, check, filterFunc) {
   if (check) {
-    if (fs.existsSync(s)) {
+    if (file.exists(s)) {
       console.log("copy", s);
       fse.copySync(s, d);
     }
@@ -415,7 +376,7 @@ function docopy(s, d, check, filterFunc) {
 }
 
 function dodelete(f) {
-  if (fs.existsSync(f)) {
+  if (file.exists(f)) {
     // console.log("delete", f);
     fse.removeSync(f);
   }
@@ -510,7 +471,7 @@ function findDuplicatedModules(buildReportFile) {
       "xstyle/main:"
     ];
 
-    [].concat(ignoreLayers, discardLayers).forEach(function(layer) {
+    [].concat(ignoreLayers, discardLayers).forEach(function (layer) {
       var i = layers.indexOf(layer);
       if (i > -1) {
         layers.splice(i, 1);
@@ -532,11 +493,11 @@ function findDuplicatedModules(buildReportFile) {
 function cleanFilesInBuildOutput(appOutput) {
   removeNlsSource(path.join(appOutput, "dynamic-modules/nls"));
   //cleanJimu(appOutput);
-  fs.readdirSync(path.join(appOutput, "themes")).forEach(function(themeName) {
+  fs.readdirSync(path.join(appOutput, "themes")).forEach(function (themeName) {
     removeNlsSource(path.join(appOutput, "themes", themeName, "nls"));
     dodelete(path.join(appOutput, "themes", themeName, "nls/strings.js"));
     var themeWidgetsPath = path.join(appOutput, "themes", themeName, "widgets");
-    if (fs.existsSync(themeWidgetsPath)) {
+    if (file.exists(themeWidgetsPath)) {
       removeWidgetsNls(themeWidgetsPath);
     }
   });
@@ -545,7 +506,7 @@ function cleanFilesInBuildOutput(appOutput) {
 }
 
 function removeWidgetsNls(widgetsPath) {
-  fs.readdirSync(widgetsPath).forEach(function(widgetName) {
+  fs.readdirSync(widgetsPath).forEach(function (widgetName) {
     let pathToWidget = path.join(widgetsPath, widgetName);
     removeNlsSource(path.join(pathToWidget, "nls"));
     removeNlsSource(path.join(pathToWidget, "setting/nls"));
@@ -567,7 +528,7 @@ function removeWidgetsNls(widgetsPath) {
 function cleanJimu(appOutput) {
   removeNlsSource(path.join(appOutput, "jimu.js/nls"));
   //remove dijit
-  fs.readdirSync(path.join(appOutput, "jimu.js/dijit")).forEach(function(
+  fs.readdirSync(path.join(appOutput, "jimu.js/dijit")).forEach(function (
     fileName
   ) {
     var filePath = path.join(appOutput, "jimu.js/dijit", fileName);
@@ -577,7 +538,7 @@ function cleanJimu(appOutput) {
   });
   dodelete(path.join(appOutput, "jimu.js/LayerInfos"));
   //remove framework files
-  fs.readdirSync(path.join(appOutput, "jimu.js")).forEach(function(fileName) {
+  fs.readdirSync(path.join(appOutput, "jimu.js")).forEach(function (fileName) {
     var filePath = path.join(appOutput, "jimu.js", fileName);
     if (
       file.isFile(filePath) &&
@@ -590,10 +551,10 @@ function cleanJimu(appOutput) {
 }
 
 function removeNlsSource(folderPath) {
-  if (!fs.existsSync(folderPath)) {
+  if (!file.exists(folderPath)) {
     return;
   }
-  fs.readdirSync(folderPath).forEach(function(fileName) {
+  fs.readdirSync(folderPath).forEach(function (fileName) {
     var filePath = path.join(folderPath, fileName);
     if (file.isDirectory(filePath)) {
       dodelete(filePath);
@@ -611,7 +572,7 @@ function cleanFilesInAppSource(appPath) {
 function cleanBuildeGeneratedFiles(path) {
   console.log(`Removing _build-generate_ files in ${path}`);
   //clean _build-generate_ files
-  visitFolderFiles(path, function(filePath, fileName) {
+  visitFolderFiles(path, function (filePath, fileName) {
     if (isBuildGeneratedFile(filePath, fileName)) {
       dodelete(filePath);
     }
@@ -624,7 +585,7 @@ function isBuildGeneratedFile(filePath, fileName) {
 
 function cleanUncompressedSource(path) {
   console.log(`Removing uncompressed.js files in ${path}`);
-  visitFolderFiles(path, function(filePath) {
+  visitFolderFiles(path, function (filePath) {
     if (isUncompressedFile(filePath)) {
       dodelete(filePath);
     }
