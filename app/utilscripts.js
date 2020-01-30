@@ -1,7 +1,6 @@
 const path = require("path");
 const fs = require("fs");
 const requirejs = require("requirejs");
-const fse = require("fs-extra");
 const file = require("./file");
 
 exports.writeWidgetResourceModule = writeWidgetResourceModule;
@@ -10,8 +9,6 @@ exports.visitElement = visitElement;
 exports.addI18NFeatureActionsLabel = addI18NFeatureActionsLabel;
 exports.addI18NLabel = addI18NLabel;
 exports.getAmdFolderFromUri = getAmdFolderFromUri;
-exports.docopy = docopy;
-exports.dodelete = dodelete;
 exports.findDuplicatedModules = findDuplicatedModules;
 exports.cleanFilesInBuildOutput = cleanFilesInBuildOutput;
 exports.cleanFilesInAppSource = cleanFilesInAppSource;
@@ -363,25 +360,6 @@ function copyImageTest(src, dest) {
   return false;
 }
 
-function docopy(s, d, check, filterFunc) {
-  if (check) {
-    if (file.exists(s)) {
-      console.log("copy", s);
-      fse.copySync(s, d);
-    }
-  } else {
-    console.log("copy", s);
-    fse.copySync(s, d, { filter: filterFunc });
-  }
-}
-
-function dodelete(f) {
-  if (file.exists(f)) {
-    // console.log("delete", f);
-    fse.removeSync(f);
-  }
-}
-
 //visit all of the folder's file and its sub-folders.
 //if callback function return true, stop visit.
 function visitFolderFiles(folderPath, callback) {
@@ -493,7 +471,7 @@ function cleanFilesInBuildOutput(appOutput) {
   //cleanJimu(appOutput);
   fs.readdirSync(path.join(appOutput, "themes")).forEach(function (themeName) {
     removeNlsSource(path.join(appOutput, "themes", themeName, "nls"));
-    dodelete(path.join(appOutput, "themes", themeName, "nls/strings.js"));
+    file.remove(path.join(appOutput, "themes", themeName, "nls/strings.js"));
     var themeWidgetsPath = path.join(appOutput, "themes", themeName, "widgets");
     if (file.exists(themeWidgetsPath)) {
       removeWidgetsNls(themeWidgetsPath);
@@ -518,7 +496,7 @@ function removeWidgetsNls(widgetsPath) {
       "setting/nls/strings.js"
     ];
     widgetFiles.forEach(widgetFile => {
-      dodelete(path.join(pathToWidget, widgetFile));
+      file.remove(path.join(pathToWidget, widgetFile));
     });
   });
 }
@@ -531,10 +509,10 @@ function cleanJimu(appOutput) {
   ) {
     var filePath = path.join(appOutput, "jimu.js/dijit", fileName);
     if (fileName !== "SymbolsInfo") {
-      dodelete(filePath);
+      file.remove(filePath);
     }
   });
-  dodelete(path.join(appOutput, "jimu.js/LayerInfos"));
+  file.remove(path.join(appOutput, "jimu.js/LayerInfos"));
   //remove framework files
   fs.readdirSync(path.join(appOutput, "jimu.js")).forEach(function (fileName) {
     var filePath = path.join(appOutput, "jimu.js", fileName);
@@ -543,7 +521,7 @@ function cleanJimu(appOutput) {
       fileName !== "main.js" &&
       fileName !== "oauth-callback.html"
     ) {
-      dodelete(filePath);
+      file.remove(filePath);
     }
   });
 }
@@ -555,16 +533,16 @@ function removeNlsSource(folderPath) {
   fs.readdirSync(folderPath).forEach(function (fileName) {
     var filePath = path.join(folderPath, fileName);
     if (file.isDirectory(filePath)) {
-      dodelete(filePath);
+      file.remove(filePath);
     }
   });
 }
 
 function cleanFilesInAppSource(appPath) {
   cleanBuildeGeneratedFiles(appPath);
-  dodelete(path.join(appPath, "dynamic-modules/nls"));
-  dodelete(path.join(appPath, "dynamic-modules/themes"));
-  dodelete(path.join(appPath, "dynamic-modules/widgets"));
+  file.remove(path.join(appPath, "dynamic-modules/nls"));
+  file.remove(path.join(appPath, "dynamic-modules/themes"));
+  file.remove(path.join(appPath, "dynamic-modules/widgets"));
 }
 
 function cleanBuildeGeneratedFiles(path) {
@@ -572,7 +550,7 @@ function cleanBuildeGeneratedFiles(path) {
   //clean _build-generate_ files
   visitFolderFiles(path, function (filePath, fileName) {
     if (isBuildGeneratedFile(filePath, fileName)) {
-      dodelete(filePath);
+      file.remove(filePath);
     }
   });
 }
@@ -585,7 +563,7 @@ function cleanUncompressedSource(path) {
   console.log(`Removing uncompressed.js files in ${path}`);
   visitFolderFiles(path, function (filePath) {
     if (isUncompressedFile(filePath)) {
-      dodelete(filePath);
+      file.remove(filePath);
     }
   });
 }

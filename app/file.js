@@ -42,7 +42,7 @@ function copyFilesFromTo(filesAndDirectories, fromPath, toPath) {
   console.log(`Copying many files from: ${fromPath}`);
   console.log(`To path:  ${toPath}`);
   console.log(filesAndDirectories.join("\n"));
-  filesAndDirectories.forEach(function(name) {
+  filesAndDirectories.forEach(function (name) {
     if (Array.isArray(name)) {
       const from = path.join(fromPath, name[0]);
       const to = path.join(toPath, name[1]);
@@ -57,8 +57,10 @@ function copyFilesFromTo(filesAndDirectories, fromPath, toPath) {
 
 function tryCopy(from, to) {
   try {
-    //TODO: Extract method, thant inline method
-    utilscripts.docopy(from, to);
+    if (file.exists(from)) {
+      console.log("copy", from);
+      fs.copySync(from, to);
+    }
   } catch (error) {
     console.log(error);
   }
@@ -82,8 +84,10 @@ function createOrCleanDirectory(pathToDirectory) {
 }
 
 function remove(path) {
-  //TODO: Inline method
-  utilscripts.dodelete(path);
+  if (file.exists(path)) {
+    // console.log("delete", path);
+    fs.removeSync(path);
+  }
 }
 
 function isDirectory(path) {
