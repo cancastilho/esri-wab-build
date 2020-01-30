@@ -11,6 +11,7 @@ exports.readJson = readJson;
 exports.exists = exists;
 exports.copyFilesFromTo = copyFilesFromTo;
 exports.tryCopy = tryCopy;
+exports.copy = copy;
 exports.createZipFromTo = createZipFromTo;
 exports.createOrCleanDirectory = createOrCleanDirectory;
 exports.remove = remove;

@@ -9,13 +9,15 @@ const copyFilesFromTo = require("./file").copyFilesFromTo;
 
 exports.build = build;
 
-function build(buildPath) {
-  paths.setAppRoot(buildPath);
+function build(options) {
+  paths.setAppRoot(options.path);
   let startTime = new Date();
   console.log(`########## BUILD START TIME: ${startTime} ##########`);
-  file.createOrCleanDirectory(paths.buildSrc);
+  if (!options.skipBowerInstall) {
+    file.createOrCleanDirectory(paths.buildSrc);
+    installDependenciesInBuildSrc(getBowerDependencies());
+  }
   copyFilesToBuildFromTo(paths.appRoot, paths.buildSrc);
-  installDependenciesInBuildSrc(getBowerDependencies());
   file.createOrCleanDirectory(paths.buildOutput);
   preparebuild.generateAppProfileFile();
   preparebuild.generateAppConfigFile();

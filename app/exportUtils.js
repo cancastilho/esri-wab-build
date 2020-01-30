@@ -1,6 +1,4 @@
 // Tools to export WAB applications from the WAB Dev Edition Server directory
-
-const fs = require("fs-extra");
 const path = require("path");
 const hjson = require("hjson");
 const file = require("./file");
@@ -32,8 +30,8 @@ exports.exportApp = function(/*String*/ serverDir) {
     hjson.parse(configFileContents)
   );
 
-  fs.writeFileSync(`${tempDir}/env.js`, newEnvFile);
-  fs.writeFileSync(`${tempDir}/config.json`, JSON.stringify(newConfigFileObj));
+  file.write(newEnvFile, `${tempDir}/env.js`);
+  file.writeJson(newConfigFileObj, `${tempDir}/config.json`);
 
   return tempDir;
 };
@@ -72,9 +70,7 @@ exports._cleanDist = function() {
  *******************/
 exports._copyApp = function(/*String*/ serverDir) {
   const distDir = path.join(process.cwd(), "dist");
-
   file.copy(serverDir, distDir);
-
   return distDir;
 };
 

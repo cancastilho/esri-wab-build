@@ -4,15 +4,27 @@ const buildTool = require('./buildTool');
 const remoteBuild = require('./remoteBuild');
 const file = require('./file');
 const paths = require('./paths');
-const args = require('process').argv;
+const program = require('commander');
+const path = require('path');
 
-//TODO use commander.js to parse options.
-if (args.length > 2) {
-    const buildPath = args[2];
-    remoteBuild.buildApp(buildPath);
+program.
+    version(getVersion())
+    .option('-z, --zip-app', 'Build process will zip app after building it')
+    .option('-p, --path <path>', 'Path to web appbuilder app source to be built')
+    .option('-B, --skip-bower-install', 'Prevent from reinstalling bower dependencies')
+    .parse(process.argv);
+
+if (program.path) {
+    remoteBuild.buildApp(program);
 } else {
-    buildTool.build();
+    buildTool.build(program);
 }
 
-//TODO make zip optional
-file.createZipFromTo(paths.appOutput, paths.outputZip);
+if(program.zipApp){
+    file.createZipFromTo(paths.appOutput, paths.outputZip);
+}
+
+function getVersion(){
+    let packageJson = file.readJson(path.join(__dirname, '../package.json'));
+    return packageJson.version;
+}
