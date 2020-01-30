@@ -384,19 +384,17 @@ function dodelete(f) {
 
 //visit all of the folder's file and its sub-folders.
 //if callback function return true, stop visit.
-function visitFolderFiles(folderPath, cb) {
+function visitFolderFiles(folderPath, callback) {
   let allPaths = createPaths(folderPath);
   while (allPaths.length > 0) {
     let currentPath = allPaths.pop();
+    let currentFileName = path.basename(currentPath);
+    let stop = callback(currentPath, currentFileName);
     if (file.isDirectory(currentPath)) {
-      let currentFolderName = path.basename(currentPath);
-      if (!cb(currentPath, currentFolderName)) {
+      if (!stop) {
         let moreFilePaths = createPaths(currentPath);
         allPaths = allPaths.concat(moreFilePaths);
       }
-    } else {
-      let currentFileName = path.basename(currentPath);
-      cb(currentPath, currentFileName);
     }
   }
 }
