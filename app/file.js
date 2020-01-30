@@ -64,7 +64,7 @@ function tryCopy(from, to) {
   try {
     copy(from, to);
   } catch (error) {
-    console.log(error);
+    console.log(`Error copying ${from} to ${to}`);
   }
 }
 

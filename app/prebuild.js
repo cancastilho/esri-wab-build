@@ -56,8 +56,12 @@ function loadAppConfigFile() {
   appConfig._buildInfo = {};
 }
 
-exports.generateAppProfileFile = function() {
+exports.generateAppProfileFile = function(options) {
   loadProfileFile();
+  if (options.withLocales) {
+    console.log("Building considering locales: " + options.withLocales);
+    profile.localeList = options.withLocales;
+  }
   loadAppConfigFile();
   addBuildLayersToProfile();
   addBuildFilesToProfile();

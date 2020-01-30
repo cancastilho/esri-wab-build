@@ -70,7 +70,12 @@ profile = {
       name: "moment",
       location: "./moment",
       main: "moment",
+
+      //Prevent anoying warnings during dojo build.
       resourceTags: {
+        amd: function(filename, mid) {
+          return /\.js$/.test(filename); //check if is javascriptFile
+        },
         miniExclude: function(filename, mid) {
           if (mid.indexOf("/min/") > -1 || mid.indexOf("/src/") > -1) {
             return true;
@@ -89,16 +94,7 @@ profile = {
     },
     {
       name: "widgets",
-      location: "./widgets",
-      trees: [
-        // don"t bother with .hidden, tests
-        [".", ".", /(\/\.)|(~$)|(tests)/]
-      ],
-      resourceTags: {
-        amd: function(filename, mid) {
-          return /\.js$/.test(filename);
-        }
-      }
+      location: "./widgets"
     },
     {
       name: "themes",
@@ -106,7 +102,12 @@ profile = {
     },
     {
       name: "libs",
-      location: "./libs"
+      location: "./libs",
+      resourceTags: {
+        amd: function(filename, mid) {
+          return /\.js$/.test(filename); //check if is javascriptFile
+        }
+      }
     },
     {
       name: "dynamic-modules",
@@ -144,8 +145,8 @@ profile = {
     },
 
     "esri/layers/VectorTileLayerImpl": {
-      include: ["esri/layers/VectorTileLayerImpl"]
-      // ,includeLocales: ["en-us","pt-br"]
+      include: ["esri/layers/VectorTileLayerImpl"],
+      includeLocales: ["en-us"]
     },
     "esri/layers/support/webglDeps": {
       include: ["esri/layers/support/webglDeps"],
@@ -186,7 +187,7 @@ profile = {
         "jimu/WidgetManager",
         "jimu/PanelManager",
         "jimu/DataManager",
-        // "jimu/DataSourceManager",
+        "jimu/DataSourceManager",
         "jimu/LayoutManager",
         "jimu/PoolControllerMixin",
         "jimu/SpatialReference/utils",
@@ -225,8 +226,8 @@ profile = {
         "jimu/dijit/TabContainer3",
         "jimu/dijit/TileLayoutContainer",
         "jimu/dijit/DrawBox",
-        "jimu/dijit/URLInput"
-        // "jimu/dijit/GridLayout"
+        "jimu/dijit/URLInput",
+        "jimu/dijit/GridLayout"
       ],
       exclude: ["esri/main", "libs/main"],
       discard: true

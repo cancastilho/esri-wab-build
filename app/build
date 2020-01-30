@@ -7,12 +7,21 @@ const paths = require('./paths');
 const program = require('commander');
 const path = require('path');
 
+//TODO include samples in usage section for these options.
+
 program.
     version(getVersion())
-    .option('-z, --zip-app', 'Build process will zip app after building it')
     .option('-p, --path <path>', 'Path to web appbuilder app source to be built')
-    .option('-B, --skip-bower-install', 'Prevent from reinstalling bower dependencies')
+    .option('-a, --with-api-version <number>', 'Create build with custom arcgis js api version. Default is version inside env.js file.')
+    .option('-z, --zip-app', 'Zip app final folder after building it')
+    .option('-B, --skip-bower-install', 'Prevent (re)installing bower dependencies')
+    .option('-L, --with-locales <locales>', 'Set custom localesList in the generated app.profile.js before dojo build.')
     .parse(process.argv);
+
+if (program.withApiVersion && isNaN(program.withApiVersion)) {
+    console.error('error: option -a or --with-api-version requires a version number.');
+    process.exit(1);
+}
 
 if (program.path) {
     remoteBuild.buildApp(program);
@@ -20,11 +29,11 @@ if (program.path) {
     buildTool.build(program);
 }
 
-if(program.zipApp){
+if (program.zipApp) {
     file.createZipFromTo(paths.appOutput, paths.outputZip);
 }
 
-function getVersion(){
+function getVersion() {
     let packageJson = file.readJson(path.join(__dirname, '../package.json'));
     return packageJson.version;
 }

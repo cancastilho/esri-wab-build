@@ -440,7 +440,7 @@ function findDuplicatedModules(buildReportFile) {
 
 function cleanFilesInBuildOutput(appOutput) {
   removeNlsSource(path.join(appOutput, "dynamic-modules/nls"));
-  //cleanJimu(appOutput);
+  //cleanJimu(appOutput); //TODO should we kill this?
   file
     .readDirectory(path.join(appOutput, "themes"))
     .forEach(function(themeName) {

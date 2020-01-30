@@ -15,13 +15,17 @@ function build(options) {
   console.log(`########## BUILD START TIME: ${startTime} ##########`);
   if (!options.skipBowerInstall) {
     file.createOrCleanDirectory(paths.buildSrc);
-    installDependenciesInBuildSrc(getBowerDependencies());
+    if (options.withApiVersion) {
+      installBowerDependenciesForApi(options.withApiVersion);
+    } else {
+      installDefaultBowerDependencies();
+    }
   }
   copyFilesToBuildFromTo(paths.appRoot, paths.buildSrc);
   file.createOrCleanDirectory(paths.buildOutput);
-  preparebuild.generateAppProfileFile();
+  preparebuild.generateAppProfileFile(options);
   preparebuild.generateAppConfigFile();
-  defineDojoConfig();
+  //defineDojoConfig(); should we kill this?
   runDojoBuild();
   utilscripts.cleanUncompressedSource(paths.appPackages);
   file.createOrCleanDirectory(paths.appOutput);
@@ -47,12 +51,18 @@ function copyFilesToBuildFromTo(fromPath, toPath) {
   copyFilesFromTo(filesAndDirectories, fromPath, toPath);
 }
 
-function getBowerDependencies() {
-  const apiVersion = getArcgisJsApiVersion(paths.appRoot);
-  return getDependenciesForApi(apiVersion);
+function installDefaultBowerDependencies() {
+  const apiVersion = getArcgisJsApiVersionFromEnvJs(paths.appRoot);
+  let bowerDependencies = getDependenciesForApi(apiVersion);
+  installDependenciesInBuildSrc(bowerDependencies);
 }
 
-function getArcgisJsApiVersion(folderPath) {
+function installBowerDependenciesForApi(apiVersion) {
+  let bowerDependencies = getDependenciesForApi(apiVersion);
+  installDependenciesInBuildSrc(bowerDependencies);
+}
+
+function getArcgisJsApiVersionFromEnvJs(folderPath) {
   const envJsAsText = file.read(getEnvJsPath(folderPath));
   const envJs = babylon.parse(envJsAsText);
   const apiVersionIndex = envJs.tokens.findIndex(function(token) {
@@ -155,12 +165,8 @@ function copyUnbuiltFilesFromTo(fromPath, toPath) {
     "images",
     "config-readme.txt",
     "readme.html",
-    "configs"
-
-    //,"index2.html",
-    //"widgets/TelaInicial",
-    //"widgets/LandView",
-    //"package.json"
+    "configs",
+    "package.json"
   ];
   copyFilesFromTo(filesFromAppRoot, fromPath, toPath);
 }
@@ -184,7 +190,7 @@ function copyAppBuildPackagesToArcgisJsFolder(fromPath, toPath) {
     "esri/main.js",
     "esri/layers/VectorTileLayerImpl.js",
     "esri/layers/vectorTiles",
-    // "esri/layers/nls",      // wont work in api version 3.20
+    "esri/layers/nls", // wont work in api version 3.20
     "dojox/widget/ColorPicker" //needed by draw widget
   ];
   let toArcgisJsPath = path.join(toPath, "arcgis-js-api");
