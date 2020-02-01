@@ -9,6 +9,13 @@ const path = require('path');
 
 //TODO include samples in usage section for these options.
 
+//TODO make cli works for apps that has widgets in config.json but 
+//     dont have the related widget folder in the project for whatever reason.
+
+//TODO improve README.md
+
+//TODO include env.js, init.js and simpleload.js to be built
+
 program.
     version(getVersion())
     .option('-p, --path <path>', 'Path to web appbuilder app source to be built')
@@ -18,19 +25,26 @@ program.
     .option('-L, --with-locales <locales>', 'Set custom localesList in the generated app.profile.js before dojo build.')
     .parse(process.argv);
 
-if (program.withApiVersion && isNaN(program.withApiVersion)) {
-    console.error('error: option -a or --with-api-version requires a version number.');
-    process.exit(1);
+validateOptions(program);
+run(program);
+
+
+function validateOptions(program){
+    if (program.withApiVersion && isNaN(program.withApiVersion)) {
+        console.error('error: option -a or --with-api-version requires a version number.');
+        process.exit(1);
+    }
 }
 
-if (program.path) {
-    remoteBuild.buildApp(program);
-} else {
-    buildTool.build(program);
-}
-
-if (program.zipApp) {
-    file.createZipFromTo(paths.appOutput, paths.outputZip);
+function run(options){
+    if (options.path) {
+        remoteBuild.buildApp(options);
+    } else {
+        buildTool.build(options);
+    }
+    if (options.zipApp) {
+        file.createZipFromTo(paths.appOutput, paths.outputZip);
+    }
 }
 
 function getVersion() {

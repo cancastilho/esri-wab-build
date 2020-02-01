@@ -16,9 +16,9 @@ const buildTool = require("./buildTool");
 
 exports.buildApp = function(options) {
   const tempPath = exportUtils.exportApp(options.path);
-
   // Get a promise from the buildTool
-  const buildCompletePromise = buildTool.build(tempPath);
+  options.path = tempPath;
+  const buildCompletePromise = buildTool.build(options);
 
   // Return a promise so the caller knows when the build is complete
   return buildCompletePromise;

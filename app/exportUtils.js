@@ -70,7 +70,8 @@ exports._cleanDist = function() {
  *******************/
 exports._copyApp = function(/*String*/ serverDir) {
   const distDir = path.join(process.cwd(), "dist");
-  file.copy(serverDir, distDir);
+  const ignoreFilesFolders = [".svn", ".git", "buildOutput", "build-src"];
+  file.copyIgnoring(serverDir, distDir, ignoreFilesFolders);
   return distDir;
 };
 
@@ -107,14 +108,12 @@ exports._replaceApiPath = function(/*String*/ envFile) {
  *
  *******************/
 exports._replaceProxyConfig = function(/*String*/ configObj) {
-  const httpProxy = configObj.httpProxy;
-
-  httpProxy.useProxy = true;
-  httpProxy.alwaysUseProxy = false;
-  httpProxy.url = "";
-  httpProxy.rules = [];
-
-  configObj.httpProxy = httpProxy;
+  configObj.httpProxy = {
+    useProxy: true,
+    alwaysUseProxy: false,
+    url: "",
+    rules: []
+  };
 
   return configObj;
 };

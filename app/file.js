@@ -18,6 +18,8 @@ exports.remove = remove;
 exports.isDirectory = isDirectory;
 exports.isFile = isFile;
 exports.readDirectory = readDirectory;
+exports.copyIgnoring = copyIgnoring;
+exports.visitFolderFiles = visitFolderFiles;
 
 function read(pathToFile) {
   return fs.readFileSync(pathToFile, encoding);
@@ -47,7 +49,7 @@ function copyFilesFromTo(filesAndDirectories, fromPath, toPath) {
   console.log(`Copying many files from: ${fromPath}`);
   console.log(`To path:  ${toPath}`);
   console.log(filesAndDirectories.join("\n"));
-  filesAndDirectories.forEach(function(name) {
+  filesAndDirectories.forEach(name => {
     if (Array.isArray(name)) {
       const from = path.join(fromPath, name[0]);
       const to = path.join(toPath, name[1]);
@@ -72,6 +74,19 @@ function copy(from, to) {
   if (exists(from)) {
     console.log("copy", from);
     fs.copySync(from, to);
+  }
+}
+
+function copyIgnoring(from, to, ignoreFilesFolders) {
+  if (exists(from)) {
+    console.log("copy", from);
+    fs.copySync(from, to, {
+      filter: function(from, to) {
+        let fromFileName = path.basename(from);
+        let shouldCopy = !ignoreFilesFolders.includes(fromFileName);
+        return shouldCopy;
+      }
+    });
   }
 }
 
@@ -105,4 +120,29 @@ function isDirectory(path) {
 
 function isFile(path) {
   return fs.statSync(path).isFile();
+}
+
+//visit all of the folder's file and its sub-folders.
+//if callback function return true, stop visit.
+function visitFolderFiles(folderPath, callback) {
+  let allPaths = createPaths(folderPath);
+  while (allPaths.length > 0) {
+    let currentPath = allPaths.pop();
+    if (isDirectory(currentPath)) {
+      let currentFileName = "";
+      let stop = callback(currentPath, currentFileName);
+      if (!stop) {
+        let moreFilePaths = createPaths(currentPath);
+        allPaths = allPaths.concat(moreFilePaths);
+      }
+    } else {
+      let currentFileName = path.basename(currentPath);
+      callback(currentPath, currentFileName);
+    }
+  }
+}
+
+function createPaths(folderPath) {
+  let fileNames = readDirectory(folderPath);
+  return fileNames.map(filename => path.join(folderPath, filename));
 }

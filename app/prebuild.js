@@ -1,95 +1,36 @@
 const path = require("path");
 const vm = require("vm");
-const utilscripts = require("./utilscripts");
+const util = require("./util");
 const paths = require("./paths");
 const file = require("./file");
 const serialize = require("serialize-javascript");
 
-var appConfig;
-var profile;
-
-function isTest(test, e, i, isThemeWidget, isOnscreen) {
-  switch (test) {
-    case "onScreenOffPanelWidget":
-      return (
-        !e.widgets &&
-        e.uri &&
-        e.visible !== false &&
-        !isThemeWidget &&
-        !widgetIsInPanel(e.uri) &&
-        isOnscreen
-      );
-    case "themeOffPanelWidget":
-      return (
-        !e.widgets &&
-        e.uri &&
-        e.visible !== false &&
-        isThemeWidget &&
-        !widgetIsInPanel(e.uri)
-      );
-    case "inPanelWidget":
-      return (
-        !e.widgets &&
-        e.uri &&
-        e.visible !== false &&
-        !isThemeWidget &&
-        widgetIsInPanel(e.uri)
-      );
-    case "offPanelWidget":
-      return (
-        !e.widgets && e.uri && e.visible !== false && !widgetIsInPanel(e.uri)
-      );
-    case "themeWidget":
-      return !e.widgets && e.uri && e.visible !== false && isThemeWidget;
-    case "widget":
-      return !e.widgets && e.uri && e.visible !== false;
-  }
-}
+module.exports.generateAppProfileFile = generateAppProfileFile;
 
 function loadProfileFile() {
-  var profileStr = file.read(paths._appProfileJs);
-  profile = vm.runInThisContext(profileStr);
+  let profileStr = file.read(paths._appProfileJs);
+  let profile = vm.runInThisContext(profileStr);
+  return profile;
 }
 
-function loadAppConfigFile() {
-  appConfig = file.readJson(paths.appConfigFile);
-  appConfig._buildInfo = {};
-}
-
-exports.generateAppProfileFile = function(options) {
-  loadProfileFile();
+function generateAppProfileFile(options) {
+  let profile = loadProfileFile();
   if (options.withLocales) {
     console.log("Building considering locales: " + options.withLocales);
     profile.localeList = options.withLocales;
   }
-  loadAppConfigFile();
-  addBuildLayersToProfile();
-  addBuildFilesToProfile();
-  utilscripts.writeThemeResourceModule(paths.buildSrc, appConfig);
-  writeAllWidgetResourceModules();
-  mergeAndWriteWidgetManifests();
-  writeProfile();
-  writeAppConfig();
-};
-
-exports.generateAppConfigFile = function() {
-  //currently done in generateAppProfileFile()
-};
-
-function writeAppConfig() {
-  let segs = paths.appConfigFile.split(path.sep);
-  segs.pop();
-  let appConfigPath = segs.join(path.sep);
-  let toPath = path.join(
-    appConfigPath,
-    "build-src",
-    "_build-generate_config.json"
-  );
-  file.writeJson(appConfig, toPath);
+  let appConfig = file.readJson(paths.appConfigFile);
+  addBuildLayersToProfile(appConfig, profile);
+  addBuildFilesToProfile(profile);
+  util.writeThemeResourceModule(paths.buildSrc, appConfig);
+  writeAllWidgetResourceModules(appConfig);
+  mergeAndWriteWidgetManifests(appConfig);
+  writeProfile(profile);
+  file.writeJson(appConfig, paths.buildGeneratedConfig);
 }
 
-function writeProfile() {
-  let profileStr = "profile = " + serializeWithFunctions(profile) + ";";
+function writeProfile(profile) {
+  let profileStr = `profile = ${serializeWithFunctions(profile)} ;`;
   let toPath = paths.generatedAppProfileJs;
   file.write(profileStr, toPath);
 }
@@ -102,107 +43,94 @@ function serializeWithFunctions(profile) {
 }
 
 ////////////////layers
-function addBuildLayersToProfile() {
-  var dynamicLayers = getAllWidgetsLayers();
-  dynamicLayers.push(getThemeLayer());
+function addBuildLayersToProfile(appConfig, profile) {
+  var dynamicLayers = getAllWidgetsLayers(appConfig);
+  dynamicLayers.push(getThemeLayer(appConfig));
 
-  dynamicLayers.forEach(function(layer) {
+  dynamicLayers.forEach(layer => {
     profile.layers[layer.name] = {
       include: layer.include,
       exclude: layer.exclude
     };
   });
 
-  var preloadLayers = getPreloadLayers();
-  preloadLayers.forEach(function(layer) {
+  var preloadLayers = getPreloadLayers(appConfig);
+  preloadLayers.forEach(layer => {
     profile.layers["dynamic-modules/preload"].include.push(layer.name);
   });
 
-  var postloadLayers = getPostLoadLayers();
-  postloadLayers.forEach(function(layer) {
+  var postloadLayers = getPostLoadLayers(appConfig);
+  postloadLayers.forEach(layer => {
     profile.layers["dynamic-modules/postload"].include.push(layer.name);
   });
 }
 
-function getPreloadLayers() {
+function getPreloadLayers(appConfig) {
   var layers = [];
+  layers.push(getThemeLayer(appConfig));
+  layers = layers.concat(getOffPanelWidgetLayers(appConfig));
+  return layers;
+}
 
-  layers.push(getThemeLayer());
-  //all off panel widget
-  utilscripts.visitElement(appConfig, function(
-    e,
-    i,
-    isThemeWidget,
-    isOnscreen
-  ) {
-    if (!isTest("offPanelWidget", e, i, isThemeWidget, isOnscreen)) {
-      return;
+function getOffPanelWidgetLayers(appConfig) {
+  let layers = [];
+  util.visitElement(appConfig, function(e) {
+    if (offPanelWidgetTest(e)) {
+      var layer = { name: e.uri };
+      layers.push(layer);
     }
-    var layer = {};
-    layer.name = e.uri;
-    layers.push(layer);
   });
   return layers;
 }
 
-function getPostLoadLayers() {
+function getPostLoadLayers(appConfig) {
   var layers = [];
-
-  //all in panel widget
-  utilscripts.visitElement(appConfig, function(
-    e,
-    i,
-    isThemeWidget,
-    isOnscreen
-  ) {
-    if (!isTest("inPanelWidget", e, i, isThemeWidget, isOnscreen)) {
-      return;
+  util.visitElement(appConfig, function(e) {
+    let isThemeWidget = themeWidgetTest(appConfig, e);
+    if (inPanelWidgetTest(e, isThemeWidget)) {
+      var layer = { name: e.uri };
+      layers.push(layer);
     }
-    var layer = {};
-    layer.name = e.uri;
-    layers.push(layer);
   });
   return layers;
 }
 
-function getThemeLayer() {
-  var layer = {};
-  layer.name = "themes/" + appConfig.theme.name + "/main";
-  layer.include = [
-    "themes/" + appConfig.theme.name + "/_build-generate_module"
-  ];
-  layer.exclude = ["jimu/main", "libs/main", "esri/main"];
+function themeWidgetTest(appConfig, widget) {
+  let themeName = appConfig.theme.name;
+  return widget.uri && widget.uri.indexOf(`themes/${themeName}`) > -1;
+}
+
+function getThemeLayer(appConfig) {
+  let themeName = appConfig.theme.name;
+  var layer = {
+    name: `themes/${themeName}/main`,
+    include: [`themes/${themeName}/_build-generate_module`],
+    exclude: ["jimu/main", "libs/main", "esri/main"]
+  };
   return layer;
 }
 
-function getAllWidgetsLayers() {
+function getAllWidgetsLayers(appConfig) {
   var layers = [];
-  utilscripts.visitElement(appConfig, function(
-    e,
-    i,
-    isThemeWidget,
-    isOnscreen
-  ) {
-    if (!isTest("widget", e, i, isThemeWidget, isOnscreen)) {
-      return;
+  util.visitElement(appConfig, function(e) {
+    if (widgetTest(e)) {
+      let amdFolder = util.getAmdFolderFromUri(e.uri);
+      var layer = {
+        name: e.uri,
+        include: [`${amdFolder}/_build-generate_module`],
+        exclude: ["jimu/main", "libs/main", "esri/main"]
+      };
+      layers.push(layer);
     }
-    var layer = {};
-    layer.name = e.uri;
-    layer.include = [
-      utilscripts.getAmdFolderFromUri(e.uri) + "/_build-generate_module"
-    ];
-    layer.exclude = ["jimu/main", "libs/main", "esri/main"];
-    layers.push(layer);
   });
   return layers;
 }
 
 /////////////build files
-function addBuildFilesToProfile() {
+function addBuildFilesToProfile(profile) {
   if (!profile.files) {
     profile.files = [];
   }
-
   profile.files.push([
     "./widgets/_build-generate_widgets-manifest.json",
     "./widgets/widgets-manifest.json"
@@ -211,65 +139,100 @@ function addBuildFilesToProfile() {
 }
 
 /////////////////widget module
-function writeAllWidgetResourceModules() {
-  utilscripts.visitElement(appConfig, function(
-    e,
-    i,
-    isThemeWidget,
-    isOnscreen
-  ) {
-    if (!isTest("widget", e, i, isThemeWidget, isOnscreen)) {
-      return;
+function writeAllWidgetResourceModules(appConfig) {
+  util.visitElement(appConfig, function(e) {
+    if (widgetTest(e)) {
+      writeWidgetResourceModule(paths.buildSrc, e);
     }
-    utilscripts.writeWidgetResourceModule(paths.buildSrc, e);
   });
+}
+
+function widgetTest(e) {
+  return !e.widgets && e.uri && e.visible !== false;
+}
+
+function inPanelWidgetTest(e, isThemeWidget) {
+  return widgetTest(e) && !isThemeWidget && widgetIsInPanel(e.uri);
+}
+
+function offPanelWidgetTest(e) {
+  return widgetTest(e) && !widgetIsInPanel(e.uri);
+}
+
+//basePath: the widgets folder's parent folder
+//widget: same format with app config
+function writeWidgetResourceModule(basePath, widget) {
+  console.log("write widget [", widget.uri, "] resource.");
+  widget.amdFolder = util.getAmdFolderFromUri(widget.uri);
+  widget.basePath = basePath;
+  let modules = getWidgetModules(widget);
+  let content = util.createModuleContent(modules);
+  let toPath = path.join(
+    basePath,
+    widget.amdFolder,
+    "_build-generate_module.js"
+  );
+  file.write(content, toPath);
+}
+
+function getWidgetModules(widget) {
+  let modulesString = [];
+  let possibleModules = [
+    //moduleName, moduleString
+    ["Widget.html", "dojo/text!./Widget.html"],
+    ["css/style.css", "dojo/text!./css/style.css"],
+    ["nls/strings.js", "dojo/i18n!./nls/strings"],
+    ["config.json", "dojo/text!./config.json"],
+    [`../${widget.config}`, `dojo/text!${widget.config}`] //alternative path
+  ];
+  possibleModules.forEach(function(parts) {
+    let moduleName = parts[0];
+    let pathToModule = path.join(widget.basePath, widget.amdFolder, moduleName);
+    if (file.exists(pathToModule)) {
+      let moduleString = parts[1];
+      modulesString.push(moduleString);
+    }
+  });
+  return modulesString;
 }
 
 //////////////////////widget manifest
-function mergeAndWriteWidgetManifests() {
-  var resultJson = {};
-
-  utilscripts.visitElement(appConfig, function(e) {
-    if (!e.uri) {
-      return;
+function mergeAndWriteWidgetManifests(appConfig) {
+  var generatedManifest = {};
+  util.visitElement(appConfig, function(e) {
+    if (e.uri) {
+      var widgetFolder = util.getAmdFolderFromUri(e.uri);
+      var manifestFile = path.join(
+        paths.buildSrc,
+        widgetFolder,
+        "manifest.json"
+      );
+      var manifestJson = file.readJson(manifestFile);
+      manifestJson.location = path.join(paths.buildSrc, widgetFolder);
+      manifestJson.category = "widget";
+      if (manifestJson.featureActions) {
+        util.addI18NFeatureActionsLabel(manifestJson);
+      }
+      util.addI18NLabel(manifestJson);
+      delete manifestJson.location;
+      generatedManifest[e.uri] = manifestJson;
     }
-    var segs = e.uri.split("/");
-    segs.pop();
-    var widgetFolder = segs.join("/");
-    var manifestFile = path.join(paths.buildSrc, widgetFolder, "manifest.json");
-    var manifestJson = file.readJson(manifestFile);
-    manifestJson.location = path.join(paths.buildSrc, widgetFolder);
-    manifestJson.category = "widget";
-    if (manifestJson.featureActions) {
-      utilscripts.addI18NFeatureActionsLabel(manifestJson);
-    }
-    utilscripts.addI18NLabel(manifestJson);
-
-    delete manifestJson.location;
-    resultJson[e.uri] = manifestJson;
   });
 
-  appConfig._buildInfo.widgetManifestsMerged = true;
+  appConfig._buildInfo = {
+    widgetManifestsMerged: true
+  };
 
-  let toPath = path.join(
-    paths.buildSrc,
-    "widgets/_build-generate_widgets-manifest.json"
-  );
-  file.writeJson(resultJson, toPath);
+  let toPath = paths.buildGeneratedManifest;
+  file.writeJson(generatedManifest, toPath);
 }
 
 function widgetIsInPanel(uri) {
-  var segs = uri.split("/");
-  segs.pop();
-  var folder = segs.join("/");
+  var folder = util.getAmdFolderFromUri(uri);
   var manifestFile = path.join(paths.buildSrc, folder, "manifest.json");
   if (file.exists(manifestFile)) {
     var manifest = file.readJson(manifestFile);
-    if (manifest.properties && manifest.properties.inPanel === false) {
-      return false;
-    } else {
-      return true;
-    }
+    return manifest.properties && manifest.properties.inPanel === false;
   }
   return true;
 }

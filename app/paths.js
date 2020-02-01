@@ -1,20 +1,56 @@
 const path = require("path");
 
-var appRoot = process.cwd();
-
-function setAppRoot(buildPath) {
-  appRoot = buildPath || process.cwd();
+class Paths {
+  constructor() {
+    this._appRoot = process.cwd();
+  }
+  setAppRoot(path) {
+    this._appRoot = path;
+  }
+  get appRoot() {
+    return this._appRoot || process.cwd();
+  }
+  get buildSrc() {
+    return path.join(this.appRoot, "build-src");
+  }
+  get buildOutput() {
+    return path.join(this.appRoot, "buildOutput");
+  }
+  get appConfigFile() {
+    return path.join(this.appRoot, "config.json");
+  }
+  get generatedAppProfileJs() {
+    return path.join(this.buildSrc, "app.profile.js");
+  }
+  get buildGeneratedManifest() {
+    return path.join(
+      this.buildSrc,
+      "widgets/_build-generate_widgets-manifest.json"
+    );
+  }
+  get buildGeneratedConfig() {
+    return path.join(this.buildSrc, "_build-generate_config.json");
+  }
+  get appOutput() {
+    return path.join(this.buildOutput, "app");
+  }
+  get appPackages() {
+    return path.join(this.buildOutput, "app-packages");
+  }
+  get outputZip() {
+    return path.join(this.buildOutput, "app.zip");
+  }
+  get _appProfileJs() {
+    return path.join(__dirname, "_app.profile.js");
+  }
+  get generatedBuildReport() {
+    return path.join(this.appPackages, "build-report.txt");
+  }
+  get duplicatedModulesReport() {
+    return path.join(this.appPackages, "duplicate-modules.txt");
+  }
 }
 
-module.exports = {
-  setAppRoot: setAppRoot,
-  appRoot: appRoot,
-  buildSrc: path.join(appRoot, "build-src"),
-  buildOutput: path.join(appRoot, "buildOutput"),
-  appConfigFile: path.join(appRoot, "config.json"),
-  appOutput: path.join(appRoot, "buildOutput", "app"),
-  appPackages: path.join(appRoot, "buildOutput", "app-packages"),
-  outputZip: path.join(appRoot, "buildOutput", "app.zip"),
-  _appProfileJs: path.join(__dirname, "_app.profile.js"),
-  generatedAppProfileJs: path.join(appRoot, "build-src", "app.profile.js")
-};
+var singleton = new Paths();
+
+module.exports = singleton;

@@ -1,5 +1,5 @@
 const path = require("path");
-const utilscripts = require("./utilscripts");
+const util = require("./util");
 const preparebuild = require("./prebuild");
 const execSync = require("child_process").execSync;
 const babylon = require("babylon");
@@ -24,14 +24,12 @@ function build(options) {
   copyFilesToBuildFromTo(paths.appRoot, paths.buildSrc);
   file.createOrCleanDirectory(paths.buildOutput);
   preparebuild.generateAppProfileFile(options);
-  preparebuild.generateAppConfigFile();
-  //defineDojoConfig(); should we kill this?
   runDojoBuild();
-  utilscripts.cleanUncompressedSource(paths.appPackages);
+  util.cleanUncompressedSource(paths.appPackages);
   file.createOrCleanDirectory(paths.appOutput);
   copyBuiltAppTo(paths.appOutput);
-  utilscripts.cleanFilesInBuildOutput(paths.appOutput);
-  utilscripts.cleanFilesInAppSource(paths.buildSrc);
+  util.cleanFilesInAppOutput(paths.appOutput);
+  util.cleanFilesInBuildSource(paths.buildSrc);
 
   //Some files just dont build right.
   copyUnbuiltFilesFromTo(paths.appRoot, paths.appOutput);
@@ -101,33 +99,6 @@ function installDependenciesInBuildSrc(dependencies) {
   let command = `node ${bower} install ${deps} --force-latest --config.directory=.`;
   console.log("Installing dependencies in: " + paths.buildSrc);
   execute(command, paths.buildSrc);
-}
-
-function defineDojoConfig() {
-  let loadModule = "build";
-  dojoConfig = {
-    baseUrl: paths.buildSrc, // Where we will put our packages
-    async: 1, // We want to make sure we are using the "modern" loader
-    hasCache: {
-      "host-node": 1, // Ensure we "force" the loader into Node.js mode
-      dom: 0 // Ensure that none of the code assumes we have a DOM
-    },
-    // While it is possible to use config-tlmSiblingOfDojo to tell the
-    // loader that your packages share the same root path as the loader,
-    // this really isn't always a good idea and it is better to be
-    // explicit about our package map.
-    packages: [
-      {
-        name: "dojo",
-        location: path.join(paths.buildSrc, "dojo")
-      },
-      {
-        name: "build",
-        location: path.join(paths.buildSrc, "util/build")
-      }
-    ],
-    deps: [loadModule] // And array of modules to load on "boot"
-  };
 }
 
 function runDojoBuild() {

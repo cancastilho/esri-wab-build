@@ -1,12 +1,9 @@
-var utilscripts = require("./utilscripts");
-var path = require("path");
+var util = require("./util");
+var paths = require("paths");
 var file = require("./file");
 
-/*global __dirname */
-var basePath = path.join(__dirname, "..");
-var modules = utilscripts.findDuplicatedModules(
-  path.join(basePath, "buildOutput/app-packages/build-report.txt")
-);
+var modules = util.findDuplicatedModules(paths.generatedBuildReport);
+
 var str = "";
 for (var key in modules) {
   var line = key + ":\n  " + modules[key].join(",");
@@ -14,11 +11,10 @@ for (var key in modules) {
 }
 if (str) {
   console.log(
-    "build has duplicated modules. Please see report here: buildOutput/app-packages/duplicate-modules.txt"
+    "build has duplicated modules.\
+   Please see report here: \
+   buildOutput/app-packages/duplicate-modules.txt"
   );
-  let toPath = path.join(
-    basePath,
-    "buildOutput/app-packages/duplicate-modules.txt"
-  );
+  let toPath = paths.duplicatedModulesReport;
   file.write(str, toPath);
 }
