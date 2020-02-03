@@ -75,6 +75,7 @@ esri-wab-build -L "pt-br,en-us" -a 3.31 --zip-app -p "C:/arcgis-web-appbuilder-2
 ````sh
 # Change to your wab app directory, example:
 cd "C:\arcgis-web-appbuilder-2.7\WebAppBuilderForArcGIS\server\apps\3"
+
 # Run npm init to create package.json
 npm init
 
