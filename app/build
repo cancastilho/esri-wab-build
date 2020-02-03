@@ -15,6 +15,7 @@ const path = require('path');
 
 program.
     version(getVersion())
+    .name('esri-wab-build')
     .option('-p, --path <path>', 'Path to web appbuilder app source to be built')
     .option('-a, --with-api-version <number>', 'Create build with custom arcgis js api version. Default is version inside env.js file.')
     .option('-z, --zip-app', 'Zip app final folder after building it')
