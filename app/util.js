@@ -21,12 +21,8 @@ function writeThemeResourceModule(basePath, options) {
   );
   let content = createModuleContent(modules);
   let themeName = getThemeNameFrom(options);
-  let toPath = path.join(
-    basePath,
-    "themes",
-    themeName,
-    "_build-generate_module.js"
-  );
+  let pathToTheme = path.join(basePath, "themes", themeName);
+  let toPath = path.join(pathToTheme, "_build-generate_module.js");
   file.write(content, toPath);
 }
 
@@ -101,22 +97,21 @@ function visitBigSection(appConfig, section, cb) {
 function getThemeStyleModules(basePath, options) {
   let modules = [];
   let themeName = getThemeNameFrom(options);
-  let commonCssFile = path.join(basePath, "themes", themeName, "common.css");
+  let pathToTheme = path.join(basePath, "themes", themeName);
+  let commonCssFile = path.join(pathToTheme, "common.css");
   if (file.exists(commonCssFile)) {
     modules.push("dojo/text!./common.css");
   }
 
   let defaultStyleFileName = getDefaultStyleFileName(options);
   var defaultStyleFile = path.join(
-    basePath,
-    "themes",
-    themeName,
+    pathToTheme,
     "styles",
     defaultStyleFileName,
     "style.css"
   );
   if (file.exists(defaultStyleFile)) {
-    modules.push("dojo/text!./styles/" + defaultStyleFileName + "/style.css");
+    modules.push(`dojo/text!./styles/${defaultStyleFileName}/style.css`);
   }
   return modules;
 }
@@ -135,12 +130,8 @@ function getDefaultStyleFileName(options) {
 function getThemeNlsModule(basePath, options) {
   let modules = [];
   let themeName = getThemeNameFrom(options);
-  let nlsStringsPath = path.join(
-    basePath,
-    "themes",
-    themeName,
-    "nls/strings.js"
-  );
+  let pathToTheme = path.join(basePath, "themes", themeName);
+  let nlsStringsPath = path.join(pathToTheme, "nls/strings.js");
   if (file.exists(nlsStringsPath)) {
     modules.push("dojo/i18n!./nls/strings");
   }
@@ -325,46 +316,45 @@ function findDuplicatedModules(buildReportFile) {
       duplicatedModules[key] = modules[key];
     }
   }
+  return duplicatedModules;
+}
 
-  function fixLayers(layers) {
-    //some layers we ignore them
-    var ignoreLayers = [
-      "dynamic-modules/preload:",
-      "dynamic-modules/postload:"
-    ];
-    var discardLayers = [
-      "jimu/dijit-all:",
-      "esri/main:",
-      "dgrid/main:",
-      "xstyle/main:"
-    ];
+function fixLayers(layers) {
+  //some layers we ignore them
+  var ignoreLayers = ["dynamic-modules/preload:", "dynamic-modules/postload:"];
+  var discardLayers = [
+    "jimu/dijit-all:",
+    "esri/main:",
+    "dgrid/main:",
+    "xstyle/main:"
+  ];
 
-    [].concat(ignoreLayers, discardLayers).forEach(function(layer) {
-      var i = layers.indexOf(layer);
-      if (i > -1) {
-        layers.splice(i, 1);
-      }
-    });
+  [].concat(ignoreLayers, discardLayers).forEach(function(layer) {
+    var i = layers.indexOf(layer);
+    if (i > -1) {
+      layers.splice(i, 1);
+    }
+  });
 
-    if (layers.length === 2) {
-      //we ignore same module in widget and it's setting page
-      var segs1 = layers[0].split("/");
-      var segs2 = layers[1].split("/");
-      if (segs1[0] === "widgets" && segs1[1] === segs2[1]) {
-        layers.splice(0, 2);
-      }
+  if (layers.length === 2) {
+    //we ignore same module in widget and it's setting page
+    var segs1 = layers[0].split("/");
+    var segs2 = layers[1].split("/");
+    if (segs1[0] === "widgets" && segs1[1] === segs2[1]) {
+      layers.splice(0, 2);
     }
   }
-  return duplicatedModules;
 }
 
 function cleanFilesInAppOutput(appOutput) {
   removeNlsSource(path.join(appOutput, "dynamic-modules/nls"));
   //cleanJimu(appOutput); //TODO should we kill this?
-  file.readDirectory(path.join(appOutput, "themes")).forEach(themeName => {
-    removeNlsSource(path.join(appOutput, "themes", themeName, "nls"));
-    file.remove(path.join(appOutput, "themes", themeName, "nls/strings.js"));
-    var themeWidgetsPath = path.join(appOutput, "themes", themeName, "widgets");
+  let pathToThemes = path.join(appOutput, "themes");
+  file.readDirectory(pathToThemes).forEach(themeName => {
+    let pathToTheme = path.join(pathToThemes, themeName);
+    removeNlsSource(path.join(pathToTheme, "nls"));
+    file.remove(path.join(pathToTheme, "nls/strings.js"));
+    var themeWidgetsPath = path.join(pathToTheme, "widgets");
     if (file.exists(themeWidgetsPath)) {
       removeWidgetsNls(themeWidgetsPath);
     }
@@ -394,25 +384,24 @@ function removeWidgetsNls(widgetsPath) {
 }
 
 function cleanJimu(appOutput) {
-  removeNlsSource(path.join(appOutput, "jimu.js/nls"));
+  let jimuPath = path.join(appOutput, "jimu.js");
+  removeNlsSource(path.join(jimuPath, "/nls"));
   //remove dijit
-  file
-    .readDirectory(path.join(appOutput, "jimu.js/dijit"))
-    .forEach(fileName => {
-      var filePath = path.join(appOutput, "jimu.js/dijit", fileName);
-      if (fileName !== "SymbolsInfo") {
-        file.remove(filePath);
-      }
-    });
-  file.remove(path.join(appOutput, "jimu.js/LayerInfos"));
+  file.readDirectory(path.join(jimuPath, "/dijit")).forEach(fileName => {
+    var filePath = path.join(jimuPath, "/dijit", fileName);
+    if (fileName !== "SymbolsInfo") {
+      file.remove(filePath);
+    }
+  });
+  file.remove(path.join(jimuPath, "/LayerInfos"));
   //remove framework files
-  file.readDirectory(path.join(appOutput, "jimu.js")).forEach(fileName => {
-    var filePath = path.join(appOutput, "jimu.js", fileName);
-    if (
+  file.readDirectory(jimuPath).forEach(fileName => {
+    var filePath = path.join(jimuPath, fileName);
+    let shouldRemoveFile =
       file.isFile(filePath) &&
       fileName !== "main.js" &&
-      fileName !== "oauth-callback.html"
-    ) {
+      fileName !== "oauth-callback.html";
+    if (shouldRemoveFile) {
       file.remove(filePath);
     }
   });

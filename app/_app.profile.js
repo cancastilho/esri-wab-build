@@ -105,7 +105,7 @@ profile = {
       location: "./libs",
       resourceTags: {
         amd: function(filename, mid) {
-          return /\.js$/.test(filename); //check if is javascriptFile
+          return /\.js$/.test(filename); //check if it is javascript file
         }
       }
     },

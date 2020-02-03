@@ -23,10 +23,34 @@ function generateAppProfileFile(options) {
   addBuildLayersToProfile(appConfig, profile);
   addBuildFilesToProfile(profile);
   util.writeThemeResourceModule(paths.buildSrc, appConfig);
+  removeUnusedWidgetsFrom(appConfig.widgetOnScreen);
+  removeUnusedWidgetsFrom(appConfig.widgetPool);
   writeAllWidgetResourceModules(appConfig);
   mergeAndWriteWidgetManifests(appConfig);
   writeProfile(profile);
   file.writeJson(appConfig, paths.buildGeneratedConfig);
+}
+
+/**
+ * This will prevent errors when there are widgets defined in appConfig (config.json)
+ * but that have no folder under ./widgets.
+ *
+ * @param {*} appConfigSection
+ */
+function removeUnusedWidgetsFrom(appConfigSection) {
+  let validWidgets = appConfigSection.widgets.filter(widget => {
+    if (widget.uri) {
+      var widgetFolder = util.getAmdFolderFromUri(widget.uri);
+      let widgetPath = path.join(paths.buildSrc, widgetFolder);
+      if (!file.exists(widgetPath)) {
+        console.log(
+          `Missing folder ${widgetFolder} folder. Removing widget from appConfig.`
+        );
+        return false;
+      } else return true;
+    } else return true;
+  });
+  appConfigSection.widgets = validWidgets;
 }
 
 function writeProfile(profile) {
@@ -131,6 +155,7 @@ function addBuildFilesToProfile(profile) {
   if (!profile.files) {
     profile.files = [];
   }
+  //files to be copied from buildSrc to appOutput by dojo build.
   profile.files.push([
     "./widgets/_build-generate_widgets-manifest.json",
     "./widgets/widgets-manifest.json"
@@ -165,13 +190,10 @@ function writeWidgetResourceModule(basePath, widget) {
   console.log("write widget [", widget.uri, "] resource.");
   widget.amdFolder = util.getAmdFolderFromUri(widget.uri);
   widget.basePath = basePath;
+  let widgetPath = path.join(basePath, widget.amdFolder);
   let modules = getWidgetModules(widget);
   let content = util.createModuleContent(modules);
-  let toPath = path.join(
-    basePath,
-    widget.amdFolder,
-    "_build-generate_module.js"
-  );
+  let toPath = path.join(widgetPath, "_build-generate_module.js");
   file.write(content, toPath);
 }
 
@@ -202,13 +224,10 @@ function mergeAndWriteWidgetManifests(appConfig) {
   util.visitElement(appConfig, function(e) {
     if (e.uri) {
       var widgetFolder = util.getAmdFolderFromUri(e.uri);
-      var manifestFile = path.join(
-        paths.buildSrc,
-        widgetFolder,
-        "manifest.json"
-      );
+      let widgetPath = path.join(paths.buildSrc, widgetFolder);
+      var manifestFile = path.join(widgetPath, "manifest.json");
       var manifestJson = file.readJson(manifestFile);
-      manifestJson.location = path.join(paths.buildSrc, widgetFolder);
+      manifestJson.location = widgetFolder;
       manifestJson.category = "widget";
       if (manifestJson.featureActions) {
         util.addI18NFeatureActionsLabel(manifestJson);

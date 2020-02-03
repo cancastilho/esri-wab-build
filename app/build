@@ -9,9 +9,6 @@ const path = require('path');
 
 //TODO include samples in usage section for these options.
 
-//TODO make cli works for apps that has widgets in config.json but 
-//     dont have the related widget folder in the project for whatever reason.
-
 //TODO improve README.md
 
 //TODO include env.js, init.js and simpleload.js to be built
@@ -41,9 +38,6 @@ function run(options){
         remoteBuild.buildApp(options);
     } else {
         buildTool.build(options);
-    }
-    if (options.zipApp) {
-        file.createZipFromTo(paths.appOutput, paths.outputZip);
     }
 }
 
