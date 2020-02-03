@@ -1,10 +1,10 @@
 {
   "author": {
-    "name": "George Bochenek",
-    "email": "gbochenek@esri.com"
+    "name": "Carlos A. Nantes de Castilho R.",
+    "email": "cancastilho@gmail.com"
   },
   "name": "esri-wab-build",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Build ESRI Web App Builder Applications for performance.",
   "license": "Apache-2.0",
   "main": "app/build",
@@ -38,8 +38,7 @@
     "hjson": "^3.1.1",
     "requirejs": "^2.1.14",
     "commander": "^4.1.0",
-    "serialize-javascript": "^2.1.2",
-    "bower": "^1.8.8"
+    "serialize-javascript": "^2.1.2"
   },
   "devDependencies": {
     "husky": "^0.14.1",

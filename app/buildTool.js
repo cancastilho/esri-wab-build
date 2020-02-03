@@ -108,8 +108,7 @@ function getDependenciesForApi(apiVersion) {
 
 function installDependenciesInBuildSrc(dependencies) {
   let deps = dependencies.join(" ");
-  let bower = path.join(__dirname, "../node_modules/bower/bin/bower");
-  let command = `node ${bower} install ${deps} --force-latest --config.directory=.`;
+  let command = `bower install ${deps} --force-latest --config.directory=.`;
   console.log("Installing dependencies in: " + paths.buildSrc);
   execute(command, paths.buildSrc);
 }

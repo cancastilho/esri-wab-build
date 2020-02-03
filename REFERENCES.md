@@ -7,7 +7,7 @@
 - [Dojo build tutorial](https://dojotoolkit.org/documentation/tutorials/1.10/build/)
 - [Dojo Tutorial - Advanced AMD Usage](https://dojotoolkit.org/documentation/tutorials/1.10/modules_advanced/)
 - [dojoConfig packages vs paths vs aliases](https://www.sitepen.com/blog/dojo-faq-what-is-the-difference-packages-vs-paths-vs-aliases/)
-- [Dojo Build System completo](https://dojotoolkit.org/reference-guide/1.10/build/buildSystem.html#specifying-resources)
+- [Dojo Build System](https://dojotoolkit.org/reference-guide/1.10/build/buildSystem.html#specifying-resources)
 - [Option map in profile.js](https://www.sitepen.com/blog/dojo-faq-what-is-the-map-config-option/)
 - [Option includeLocales in profile.js](https://dojotoolkit.org/documentation/tutorials/1.10/mobile/flickrview/part5/)
 - [Option discard profile.js](https://dojotoolkit.org/reference-guide/1.10/build/transforms/writeAmd.html)

@@ -16,35 +16,12 @@ Project derived from [esri/esri-wab-build](https://github.com/Esri/esri-wab-buil
 * Java 7 or greater
 * Git
 
-## Install and run as project dependency:
 
-1. Install this package using:
-
-````sh
-# Change to your wab app directory, example:
-cd "C:\arcgis-web-appbuilder-2.7\WebAppBuilderForArcGIS\server\apps\3"
-# Run npm init to create package.json
-npm init
-# Install this package as dependency
-npm install cancastilho/esri-wab-build#v1.2.0 --save-dev
-# Open package.json and configure the build property:
-{
-  ...
-  "scripts": {
-    "build": "esri-wab-build"
-  }
-  ...
-}
-# Build your app
-npm run build
-````
-
-The build output will be located in C:\arcgis-web-appbuilder-2.7\WebAppBuilderForArcGIS\server\apps\3\buildOut\app.
-
-## Install and Run Gloabaly as CLI
+## Install and Run Globally as CLI
 
 ````sh
-npm install -g esri-wab-build
+npm install -g bower
+npm install -g cancastilho/esri-wab-build#v1.2.0
 ````
 
 ````
@@ -68,10 +45,10 @@ Sample usage:
 
 ````sh
 # 1. Copy app to current directory dist folder and build it.
-esri-wab-build -p "C:\arcgis-web-appbuilder-2.7\WebAppBuilderForArcGIS\server\apps\3"
+esri-wab-build -p "C:/arcgis-web-appbuilder-2.7/WebAppBuilderForArcGIS/server/apps/3"
 
 # 2. Change to wab app folder and run esri-wab-build. 
-cd C:\arcgis-web-appbuilder-2.7\WebAppBuilderForArcGIS\server\apps\3
+cd C:/arcgis-web-appbuilder-2.7/WebAppBuilderForArcGIS/server/apps/3
 esri-wab-build
 
 # 3. Zip the built app.
@@ -89,8 +66,38 @@ esri-wab-build -L "pt-br,en-us"
 esri-wab-build -a 3.31
 
 # 6. Combined options
-esri-wab-build -L "pt-br,en-us" -a 3.31 --zip-app -p "C:\arcgis-web-appbuilder-2.7\WebAppBuilderForArcGIS\server\apps\3"
+esri-wab-build -L "pt-br,en-us" -a 3.31 --zip-app -p "C:/arcgis-web-appbuilder-2.7/WebAppBuilderForArcGIS/server/apps/3"
 ````
+
+
+## Install as project dependency:
+
+````sh
+# Change to your wab app directory, example:
+cd "C:\arcgis-web-appbuilder-2.7\WebAppBuilderForArcGIS\server\apps\3"
+# Run npm init to create package.json
+npm init
+
+# Install bower
+npm install -g bower
+
+# Install this package as dependency
+npm install cancastilho/esri-wab-build#v1.2.0 --save-dev
+
+# Open package.json and configure the build property:
+{
+  ...
+  "scripts": {
+    "build": "esri-wab-build"
+  }
+  ...
+}
+
+# Build your app
+npm run build
+````
+
+The build output will be located in C:\arcgis-web-appbuilder-2.7\WebAppBuilderForArcGIS\server\apps\3\buildOut\app.
 
 ## Licensing
 
