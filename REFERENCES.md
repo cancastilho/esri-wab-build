@@ -14,3 +14,5 @@
 - [Using npm for Custom Dojo Builds](https://developers.arcgis.com/javascript/latest/guide/using-npm/)
 - [Github Esri jsapi-resources build.profile.js arcgis 3.x](https://github.com/Esri/jsapi-resources/blob/master/3.x/bower/dojo/build.profile.js)
 - [Github Esri jsapi-resources build.profile.js arcgis 4.x](https://github.com/Esri/jsapi-resources/blob/master/4.x/npm/demo/build.profile.js)
+- [Dojo-Mini: Optimization Tricks with the Dojo Toolkit](https://www.sitepen.com/blog/dojo-mini-optimization-tricks-with-the-dojo-toolkit/)
+- Run `node dojo/dojo.js load=build --help` for usefull information on dojo parameters

@@ -21,7 +21,7 @@ Project derived from [esri/esri-wab-build](https://github.com/Esri/esri-wab-buil
 
 ````sh
 npm install -g bower
-npm install -g cancastilho/esri-wab-build#v1.2.0
+npm install -g cancastilho/esri-wab-build#v1.2.1
 ````
 
 ````
@@ -29,15 +29,13 @@ Usage: esri-wab-build [options]
 
 Options:
   -V, --version                    output the version number
-  -p, --path <path>                Path to web appbuilder app source to be
-                                   built
-  -a, --with-api-version <number>  Create build with custom arcgis js api
-                                   version. Default is version inside env.js
-                                   file.
+  -p, --path <path>                Path to web appbuilder app source to be built
+  -a, --with-api-version <number>  Create build with custom arcgis js api version. Default is version inside env.js file.
   -z, --zip-app                    Zip app final folder after building it
   -B, --skip-bower-install         Prevent (re)installing bower dependencies
-  -L, --with-locales <locales>     Set custom localesList in the generated
-                                   app.profile.js before dojo build.
+  -L, --with-locales <locales>     Set custom localesList in the generated app.profile.js before dojo build.
+  -c, --build-tool-config <path>   Path to your custom builToolConfig.js file.
+  -q, --quiet                      Disable output messages in the terminal.
   -h, --help                       output usage information
 ````
 
@@ -67,6 +65,9 @@ esri-wab-build -a 3.31
 
 # 6. Combined options
 esri-wab-build -L "pt-br,en-us" -a 3.31 --zip-app -p "C:/arcgis-web-appbuilder-2.7/WebAppBuilderForArcGIS/server/apps/3"
+
+# 7. Combined options api version and custom dojo profile
+esri-wab-build -a 3.31 -f "C:/arcgis-web-appbuilder-2.7/WebAppBuilderForArcGIS/server/apps/3/custom.app.profile.js"
 ````
 
 
@@ -83,13 +84,13 @@ npm init
 npm install -g bower
 
 # Install this package as dependency
-npm install cancastilho/esri-wab-build#v1.2.0 --save-dev
+npm install cancastilho/esri-wab-build#v1.2.1 --save-dev
 
 # Open package.json and configure the build property:
 {
   ...
   "scripts": {
-    "build": "esri-wab-build"
+    "build": "node ./node_modules/esri-wab-build/app/build"
   }
   ...
 }
@@ -99,6 +100,10 @@ npm run build
 ````
 
 The build output will be located in C:\arcgis-web-appbuilder-2.7\WebAppBuilderForArcGIS\server\apps\3\buildOut\app.
+
+## Build report
+
+A `build-report.txt` file, with the log of dojo build, will be written to the final `app` folder.
 
 ## Licensing
 

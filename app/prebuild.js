@@ -8,7 +8,7 @@ const serialize = require("serialize-javascript");
 module.exports.generateAppProfileFile = generateAppProfileFile;
 
 function loadProfileFile() {
-  let profileStr = file.read(paths._appProfileJs);
+  let profileStr = file.read(paths.appProfileJs);
   let profile = vm.runInThisContext(profileStr);
   return profile;
 }

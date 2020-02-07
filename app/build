@@ -7,10 +7,6 @@ const paths = require('./paths');
 const program = require('commander');
 const path = require('path');
 
-//TODO include samples in usage section for these options.
-
-//TODO improve README.md
-
 //TODO include env.js, init.js and simpleload.js to be built
 
 program.
@@ -21,25 +17,38 @@ program.
     .option('-z, --zip-app', 'Zip app final folder after building it')
     .option('-B, --skip-bower-install', 'Prevent (re)installing bower dependencies')
     .option('-L, --with-locales <locales>', 'Set custom localesList in the generated app.profile.js before dojo build.')
+    .option('-c, --build-tool-config <path>', 'Path to your custom builToolConfig.js file.')
+    .option('-f, --path-app-profile <path>', 'Path to your custom app.profile.js file.')
+    .option('-q, --quiet', 'Disable most output messages in the terminal.')
     .parse(process.argv);
 
 validateOptions(program);
 run(program);
 
 
-function validateOptions(program){
+function validateOptions(program) {
     if (program.withApiVersion && isNaN(program.withApiVersion)) {
         console.error('error: option -a or --with-api-version requires a version number.');
         process.exit(1);
     }
 }
 
-function run(options){
+function run(options) {
+    if (options.quiet) {
+        configureSilentConsole();
+    }
     if (options.path) {
         remoteBuild.buildApp(options);
     } else {
         buildTool.build(options);
     }
+}
+
+function configureSilentConsole() {
+    console.info = function () { };
+    console.error = function () { };
+    console.warn = function () { };
+    console.log = function () { };
 }
 
 function getVersion() {

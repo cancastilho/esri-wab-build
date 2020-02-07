@@ -6,7 +6,7 @@ const babylon = require("babylon");
 const paths = require("./paths");
 const file = require("./file");
 const copyFilesFromTo = require("./file").copyFilesFromTo;
-const buildToolConfig = require("./buildToolConfig");
+let buildToolConfig = require("./buildToolConfig");
 
 exports.build = build;
 
@@ -25,6 +25,16 @@ function buildSync(options) {
   paths.setAppRoot(options.path);
   let startTime = new Date();
   console.log(`########## BUILD START TIME: ${startTime} ##########`);
+  if (options.buildToolConfig) {
+    buildToolConfig = require(options.buildToolConfig);
+    console.log(
+      "Using buildToolConfig.js located at: " + options.buildToolConfig
+    );
+  }
+  if (options.pathAppProfile) {
+    paths.appProfileJs = options.pathAppProfile;
+    console.log("Using app.profile.js located at: " + paths.appProfileJs);
+  }
   if (!options.skipBowerInstall) {
     file.createOrCleanDirectory(paths.buildSrc);
     if (options.withApiVersion) {
@@ -36,6 +46,7 @@ function buildSync(options) {
   copyFilesToBuildFromTo(paths.appRoot, paths.buildSrc);
   file.createOrCleanDirectory(paths.buildOutput);
   preparebuild.generateAppProfileFile(options);
+  removeFilesBeforeBuild(buildToolConfig.filesToRemoveBeforeBuild);
   runDojoBuild();
   util.cleanUncompressedSource(paths.appPackages);
   file.createOrCleanDirectory(paths.appOutput);
@@ -162,4 +173,13 @@ function copyEnvJsAndReplaceApiUrl(from, to) {
   fileContent = fileContent.replace(oldApiRegEx, newApiUrl);
   let toPath = getEnvJsPath(to);
   file.write(fileContent, toPath);
+}
+
+function removeFilesBeforeBuild(files) {
+  console.log("Removing many files: ");
+  console.log(files.join("\n"));
+  files.forEach(aFilePath => {
+    let fromPath = path.join(paths.buildSrc, aFilePath);
+    file.remove(fromPath);
+  });
 }

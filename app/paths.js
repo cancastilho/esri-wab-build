@@ -3,6 +3,7 @@ const path = require("path");
 class Paths {
   constructor() {
     this._appRoot = process.cwd();
+    this._appProfileJs = path.join(__dirname, "_app.profile.js");
   }
   setAppRoot(path) {
     this._appRoot = path;
@@ -40,8 +41,11 @@ class Paths {
   get outputZip() {
     return path.join(this.buildOutput, "app.zip");
   }
-  get _appProfileJs() {
-    return path.join(__dirname, "_app.profile.js");
+  get appProfileJs() {
+    return this._appProfileJs;
+  }
+  set appProfileJs(pathToFile) {
+    this._appProfileJs = pathToFile;
   }
   get generatedBuildReport() {
     return path.join(this.appPackages, "build-report.txt");

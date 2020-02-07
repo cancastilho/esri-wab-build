@@ -8,6 +8,33 @@ const filesAndDirectoriesToBuild = [
   "widgets"
 ];
 
+// As instructed in https://www.sitepen.com/blog/dojo-mini-optimization-tricks-with-the-dojo-toolkit/
+// Files in build-src folder
+const filesToRemoveBeforeBuild = [
+  // "dojo/tests/",
+  // "dgauges/tests/",
+  // "dijit/demos/",
+  // "dijit/bench/",
+  // "dgrid/demos/",
+  // "dgrid/doc/",
+  // "dgrid/test/",
+  // "dgrid1/demos/",
+  // "dgrid1/doc/",
+  // "util/resources/",
+  // "util/docscripts/",
+  // "util/doh/",
+  // "util/jsdoc/",
+  // "jimu/tests/",
+  // "dijit/themes/soria",
+  // "dijit/themes/nihilo",
+  // "dijit/themes/themeTesterImages",
+  // "dijit/themes/tundra",
+  // "dijit/themes/themeTester.html",
+  // "dijit/themes/themeTester-orig.html",
+  // "dijit/themes/themeTesterQuirk.html",
+  // "xstyle/test"
+];
+
 //Built files in buildOutput/app-packages
 //to be copied to buildOutput/app
 const builtFilesToCopyToAppOutput = [
@@ -60,6 +87,7 @@ const unbuiltFiles = [
 ];
 
 exports.builtFilesToCopyToAppOutput = builtFilesToCopyToAppOutput;
+exports.filesToRemoveBeforeBuild = filesToRemoveBeforeBuild;
 exports.filesAndDirectoriesToBuild = filesAndDirectoriesToBuild;
 exports.builtFilesToCopyToArcgisJsFolder = builtFilesToCopyToArcgisJsFolder;
 exports.unbuiltFiles = unbuiltFiles;
