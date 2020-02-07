@@ -22,18 +22,19 @@ function build(options) {
 }
 
 function buildSync(options) {
-  paths.setAppRoot(options.path);
+  paths.appRoot = options.path;
   let startTime = new Date();
   console.log(`########## BUILD START TIME: ${startTime} ##########`);
   if (options.buildToolConfig) {
-    buildToolConfig = require(options.buildToolConfig);
+    paths.buildToolConfigJs = options.buildToolConfig;
+    buildToolConfig = require(paths.buildToolConfigJs);
     console.log(
-      "Using buildToolConfig.js located at: " + options.buildToolConfig
+      `Using buildToolConfig.js located at: ${paths.buildToolConfigJs}`
     );
   }
   if (options.pathAppProfile) {
     paths.appProfileJs = options.pathAppProfile;
-    console.log("Using app.profile.js located at: " + paths.appProfileJs);
+    console.log(`Using app.profile.js located at: ${paths.appProfileJs}`);
   }
   if (!options.skipBowerInstall) {
     file.createOrCleanDirectory(paths.buildSrc);

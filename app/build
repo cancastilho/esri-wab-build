@@ -31,6 +31,14 @@ function validateOptions(program) {
         console.error('error: option -a or --with-api-version requires a version number.');
         process.exit(1);
     }
+    if (program.pathAppProfile && !file.exists(program.pathAppProfile)) {
+        console.error('error: option -f or --path-app-profile, file doesn\'t exist.');
+        process.exit(1);
+    }
+    if (program.buildToolConfig && !file.exists(program.buildToolConfig)) {
+        console.error('error: option -c, --build-tool-config, file doesn\'t exist.');
+        process.exit(1);
+    }
 }
 
 function run(options) {

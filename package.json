@@ -4,7 +4,7 @@
     "email": "cancastilho@gmail.com"
   },
   "name": "esri-wab-build",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Build ESRI Web App Builder Applications for performance.",
   "license": "Apache-2.0",
   "main": "app/build",

@@ -21,7 +21,7 @@ Project derived from [esri/esri-wab-build](https://github.com/Esri/esri-wab-buil
 
 ````sh
 npm install -g bower
-npm install -g cancastilho/esri-wab-build#v1.2.1
+npm install -g cancastilho/esri-wab-build#v1.2.2
 ````
 
 ````
@@ -35,6 +35,7 @@ Options:
   -B, --skip-bower-install         Prevent (re)installing bower dependencies
   -L, --with-locales <locales>     Set custom localesList in the generated app.profile.js before dojo build.
   -c, --build-tool-config <path>   Path to your custom builToolConfig.js file.
+  -f, --path-app-profile <path>    Path to your custom app.profile.js file.
   -q, --quiet                      Disable output messages in the terminal.
   -h, --help                       output usage information
 ````
@@ -68,6 +69,9 @@ esri-wab-build -L "pt-br,en-us" -a 3.31 --zip-app -p "C:/arcgis-web-appbuilder-2
 
 # 7. Combined options api version and custom dojo profile
 esri-wab-build -a 3.31 -f "C:/arcgis-web-appbuilder-2.7/WebAppBuilderForArcGIS/server/apps/3/custom.app.profile.js"
+
+# 8. Combined options custom app.profile.js and custom buildToolConfig.js
+esri-wab-build -f "C:/wab/server/apps/3/custom.app.profile.js" -c "C:/wab/server/apps/3/buildToolConfig.js"
 ````
 
 
@@ -84,7 +88,7 @@ npm init
 npm install -g bower
 
 # Install this package as dependency
-npm install cancastilho/esri-wab-build#v1.2.1 --save-dev
+npm install cancastilho/esri-wab-build#v1.2.2 --save-dev
 
 # Open package.json and configure the build property:
 {
