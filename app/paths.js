@@ -4,13 +4,15 @@ class Paths {
   constructor() {
     this._appRoot = process.cwd();
     this._appProfileJs = path.join(__dirname, "_app.profile.js");
-    this._buildToolConfig = path.join(__dirname, "buildToolConfig.js");
+    this._buildToolConfigJs = path.join(__dirname, "buildToolConfig.js");
   }
-  set appRoot(path) {
-    if (path.isAbsolute(path)) {
-      this._appRoot = path;
-    } else {
-      this._appRoot = path.join(process.cwd(), path);
+  set appRoot(pathToFile) {
+    if (pathToFile) {
+      if (path.isAbsolute(pathToFile)) {
+        this._appRoot = pathToFile;
+      } else {
+        this._appRoot = path.join(process.cwd(), pathToFile);
+      }
     }
   }
   get appRoot() {
@@ -57,13 +59,13 @@ class Paths {
     }
   }
   get buildToolConfigJs() {
-    return this._buildToolConfig;
+    return this._buildToolConfigJs;
   }
   set buildToolConfigJs(pathToFile) {
     if (path.isAbsolute(pathToFile)) {
-      this._buildToolConfig = pathToFile;
+      this._buildToolConfigJs = pathToFile;
     } else {
-      this._buildToolConfig = path.join(process.cwd(), pathToFile);
+      this._buildToolConfigJs = path.join(process.cwd(), pathToFile);
     }
   }
   get generatedBuildReport() {
